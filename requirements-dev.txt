@@ -1,0 +1,23 @@
+# Development dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Core
+Django>=3.2
+
+# Testing framework
+pytest>=7.0
+pytest-django>=4.5
+pytest-cov>=4.0
+
+# Code quality
+ruff>=0.5
+mypy>=1.0
+django-stubs>=5.0.0
+
+# Django extensions
+django-extensions>=3.2
+django-debug-toolbar>=4.2
+
+# Environment variables
+python-dotenv>=1.0
+
