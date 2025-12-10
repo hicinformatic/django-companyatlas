@@ -12,7 +12,7 @@ SECRET_KEY = "django-insecure-test-key-only-for-testing"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS: list[str] = []
 
 # Application definition
 INSTALLED_APPS = [
@@ -95,4 +95,3 @@ COMPANYATLAS = {
     "AUTO_ENRICH": False,  # Don't auto-enrich in tests
     "CACHE_TIMEOUT": 3600,
 }
-

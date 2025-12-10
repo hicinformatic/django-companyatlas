@@ -73,7 +73,7 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
-    def get_country_data(self, country_code: str = None):
+    def get_country_data(self, country_code: str | None = None):
         """Get country-specific data for this company.
 
         Args:
@@ -107,7 +107,7 @@ class Company(models.Model):
         except CompanyData.DoesNotExist:
             return None
 
-    def set_data_value(self, country_code: str, data_type: str, value, value_type: str = None):
+    def set_data_value(self, country_code: str, data_type: str, value, value_type: str | None = None):
         """Set a specific data value for a country.
 
         Args:

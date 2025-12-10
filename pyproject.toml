@@ -71,6 +71,10 @@ plugins = ["mypy_django_plugin.main"]
 module = "python_companyatlas.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "virtualqueryset.*"
+ignore_missing_imports = true
+
 [tool.django-stubs]
 django_settings_module = "tests.settings"
 

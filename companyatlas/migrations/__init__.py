@@ -1,2 +1,1 @@
 """Migrations for companyatlas app."""
-

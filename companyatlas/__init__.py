@@ -1,17 +1,11 @@
 """Django CompanyAtlas - Company information management."""
 
-from .models import Company, CompanyData, CompanyCountryData
-from .helpers import (
-    create_or_update_company_data,
-    bulk_create_company_data,
-    get_company_by_country_data,
-)
+# Models and helpers are imported lazily to avoid AppRegistryNotReady errors
+# Import them directly when needed:
+#   from companyatlas.models import Company, CompanyData, CompanyCountryData
+#   from companyatlas.helpers import create_or_update_company_data, ...
 
-__all__ = [
-    "Company",
-    "CompanyData",
-    "CompanyCountryData",
-    "create_or_update_company_data",
-    "bulk_create_company_data",
-    "get_company_by_country_data",
-]
+__all__ = []
+
+# Version
+__version__ = "0.1.0"

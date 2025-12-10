@@ -21,3 +21,6 @@ django-debug-toolbar>=4.2
 # Environment variables
 python-dotenv>=1.0
 
+# Flag display (optional, for backend admin)
+flagpy>=1.0.0
+
