@@ -2,13 +2,14 @@
 
 from django.db import transaction
 
-from .models import Company, CompanyCountryData, CompanyData
+from .models import Company, CompanyData
 
 
 def create_or_update_company_data(
     country: str,
     data_type: str,
     value,
+    source: str,
     company: Company | None = None,
     company_name: str | None = None,
     value_type: str | None = None,
@@ -16,17 +17,11 @@ def create_or_update_company_data(
 ) -> tuple[Company, CompanyData]:
     """Create or update company data.
 
-    This function allows inserting data like:
-    - france, denomination, "Tour Eiffel" (str)
-    - france, siren, "123456789" (str)
-    - france, capital, 100000.50 (float)
-    - france, employees, 150 (int)
-    - france, metadata, {"key": "value"} (json)
-
     Args:
         country: ISO country code (e.g., "FR", "france")
         data_type: Type of data (e.g., "denomination", "siren", "rna", "capital")
         value: Data value (can be str, int, float, dict, list)
+        source: Backend source (e.g., "insee", "pappers", "infogreffe")
         company: Existing Company instance (optional)
         company_name: Company name to use if creating new company
         value_type: Optional value type override (auto-detected if not provided)
@@ -34,56 +29,27 @@ def create_or_update_company_data(
 
     Returns:
         Tuple of (Company, CompanyData) instances
-
-    Example:
-        >>> company, data = create_or_update_company_data(
-        ...     country="FR",
-        ...     data_type="denomination",
-        ...     value="Tour Eiffel",
-        ...     company_name="Tour Eiffel"
-        ... )
-        >>> company, data = create_or_update_company_data(
-        ...     country="FR",
-        ...     data_type="capital",
-        ...     value=100000.50
-        ... )
-        >>> company, data = create_or_update_company_data(
-        ...     country="FR",
-        ...     data_type="employees",
-        ...     value=150
-        ... )
     """
-    # Normalize country code
     country = country.upper()
     if country == "FRANCE":
         country = "FR"
 
-    # Get or create company
     if company is None:
         if not company_name:
             company_name = value if data_type == "denomination" else "Unknown Company"
 
-        # Try to find existing company by name
-        company, created = Company.objects.get_or_create(
-            name=company_name, defaults={"country": country, **company_kwargs}
+        company, _ = Company.objects.get_or_create(
+            name=company_name, defaults=company_kwargs
         )
-        if not created:
-            # Update country if not set
-            if not company.country:
-                company.country = country
-                company.save(update_fields=["country"])
-    else:
-        # Update company country if not set
-        if not company.country:
-            company.country = country
-            company.save(update_fields=["country"])
 
-    # Create or update data
     data, created = CompanyData.objects.get_or_create(
-        company=company, country=country, data_type=data_type, defaults={}
+        company=company,
+        source=source,
+        country_code=country,
+        data_type=data_type,
+        defaults={},
     )
 
-    # Set value with automatic type detection or explicit type
     if value_type:
         data.value_type = value_type
         data.value = str(value)
@@ -91,43 +57,25 @@ def create_or_update_company_data(
         data.set_value(value)
     data.save()
 
-    # If this is a structured field, also update CompanyCountryData
-    if data_type in ["siren", "siret", "rna", "ape", "legal_form", "rcs"]:
-        country_data, _ = CompanyCountryData.objects.get_or_create(
-            company=company, country=country, defaults={}
-        )
-        # Convert value to string for structured fields
-        str_value = str(data.get_value()) if data.get_value() is not None else ""
-        setattr(country_data, data_type, str_value)
-        country_data.save(update_fields=[data_type])
-
     return company, data
 
 
 def bulk_create_company_data(
-    data_list: list[tuple[str, str, str]], company_name: str | None = None
+    data_list: list[tuple[str, str, str, str]], company_name: str | None = None
 ) -> Company | None:
     """Bulk create company data from a list of tuples.
 
     Args:
-        data_list: List of tuples (country, data_type, value)
+        data_list: List of tuples (country, data_type, value, source)
         company_name: Company name (optional, will use first denomination if not provided)
 
     Returns:
         Company instance or None if data_list is empty
-
-    Example:
-        >>> company = bulk_create_company_data([
-        ...     ("FR", "denomination", "Tour Eiffel"),
-        ...     ("FR", "siren", "123456789"),
-        ...     ("FR", "rna", "W12345678"),
-        ... ])
     """
     company = None
 
     with transaction.atomic():
-        for country, data_type, value in data_list:
-            # Use first denomination as company name if not provided
+        for country, data_type, value, source in data_list:
             if company is None and data_type == "denomination" and not company_name:
                 company_name = value
 
@@ -135,6 +83,7 @@ def bulk_create_company_data(
                 country=country,
                 data_type=data_type,
                 value=value,
+                source=source,
                 company=company,
                 company_name=company_name,
             )
@@ -142,37 +91,34 @@ def bulk_create_company_data(
     return company
 
 
-def get_company_by_country_data(country: str, data_type: str, value: str) -> Company | None:
+def get_company_by_country_data(
+    country: str, data_type: str, value: str, source: str | None = None
+) -> Company | None:
     """Find a company by country-specific data.
 
     Args:
         country: ISO country code
         data_type: Type of data (e.g., "siren", "rna")
         value: Data value
+        source: Optional backend source filter
 
     Returns:
         Company instance or None
-
-    Example:
-        >>> company = get_company_by_country_data("FR", "siren", "123456789")
     """
     country = country.upper()
     if country == "FRANCE":
         country = "FR"
 
     try:
-        # Try CompanyData first
-        data = CompanyData.objects.get(country=country, data_type=data_type, value=value)
-        return data.company
+        query = CompanyData.objects.filter(
+            country_code=country, data_type=data_type, value=value
+        )
+        if source:
+            query = query.filter(source=source)
+        data = query.first()
+        if data:
+            return data.company
     except CompanyData.DoesNotExist:
         pass
-
-    # Try CompanyCountryData for structured fields
-    if data_type in ["siren", "siret", "rna"]:
-        try:
-            country_data = CompanyCountryData.objects.get(country=country, **{data_type: value})
-            return country_data.company
-        except CompanyCountryData.DoesNotExist:
-            pass
 
     return None

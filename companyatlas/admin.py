@@ -1,9 +1,9 @@
 """Django admin configuration."""
 
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 
-from .models import Company, CompanyCountryData, CompanyData
+from .models import Company, CompanyData, CompanyDocument, CompanyEvent
 
 # BackendInfoAdmin is registered in apps.py ready() method to avoid AppRegistryNotReady
 
@@ -13,30 +13,23 @@ class CompanyDataInline(admin.TabularInline):
 
     model = CompanyData
     extra = 1
-    fields = ["country", "data_type", "value_type", "value"]
-    list_filter = ["country", "data_type", "value_type"]
+    fields = ["source", "country_code", "data_type", "value_type", "value"]
 
 
-class CompanyCountryDataInline(admin.StackedInline):
-    """Inline admin for CompanyCountryData."""
+class CompanyDocumentInline(admin.TabularInline):
+    """Inline admin for CompanyDocument."""
 
-    model = CompanyCountryData
-    extra = 0
-    fieldsets = (
-        (
-            "French Data",
-            {
-                "fields": ("siren", "siret", "rna", "ape", "legal_form", "rcs"),
-            },
-        ),
-        (
-            "Extra Data",
-            {
-                "fields": ("extra_data",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
+    model = CompanyDocument
+    extra = 1
+    fields = ["source", "country_code", "document_type", "title", "date", "url"]
+
+
+class CompanyEventInline(admin.TabularInline):
+    """Inline admin for CompanyEvent."""
+
+    model = CompanyEvent
+    extra = 1
+    fields = ["source", "country_code", "event_type", "title", "date"]
 
 
 @admin.register(Company)
@@ -45,54 +38,24 @@ class CompanyAdmin(admin.ModelAdmin):
 
     list_display = [
         "name",
-        "country",
-        "domain",
-        "industry",
-        "employee_count",
-        "country_data_summary",
-        "enrichment_status",
+        "description_preview",
         "created_at",
     ]
-    list_filter = ["is_enriched", "industry", "country", "created_at"]
-    search_fields = ["name", "domain", "vat_number", "legal_name"]
-    readonly_fields = ["is_enriched", "enriched_at", "created_at", "updated_at"]
+    list_filter = ["created_at"]
+    search_fields = ["name", "description"]
+    readonly_fields = ["created_at", "updated_at"]
 
-    inlines = [CompanyCountryDataInline, CompanyDataInline]
+    inlines = [CompanyDataInline, CompanyDocumentInline, CompanyEventInline]
 
     fieldsets = (
         (
-            "Identifiers",
+            _("Basic Information"),
             {
-                "fields": ("domain", "vat_number", "stock_symbol"),
+                "fields": ("name", "description"),
             },
         ),
         (
-            "Basic Information",
-            {
-                "fields": ("name", "legal_name", "description", "website"),
-            },
-        ),
-        (
-            "Details",
-            {
-                "fields": ("founded_year", "employee_count", "industry"),
-            },
-        ),
-        (
-            "Location",
-            {
-                "fields": ("country", "city", "address"),
-            },
-        ),
-        (
-            "Enrichment",
-            {
-                "fields": ("is_enriched", "enriched_at", "enrichment_data"),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Metadata",
+            _("Metadata"),
             {
                 "fields": ("created_at", "updated_at"),
                 "classes": ("collapse",),
@@ -100,43 +63,13 @@ class CompanyAdmin(admin.ModelAdmin):
         ),
     )
 
-    actions = ["enrich_selected"]
+    def description_preview(self, obj):
+        """Display truncated description."""
+        if obj.description and len(obj.description) > 50:
+            return f"{obj.description[:50]}..."
+        return obj.description or "-"
 
-    def country_data_summary(self, obj):
-        """Display summary of country-specific data."""
-        country_data = obj.country_data.first()
-        if country_data:
-            parts = []
-            if country_data.siren:
-                parts.append(f"SIREN: {country_data.siren}")
-            if country_data.rna:
-                parts.append(f"RNA: {country_data.rna}")
-            if parts:
-                return format_html("<br>".join(parts))
-        return "-"
-
-    country_data_summary.short_description = "Country Data"
-
-    def enrichment_status(self, obj):
-        """Display enrichment status with icon."""
-        if obj.is_enriched:
-            return format_html('<span style="color: green;">✓ Enriched</span>')
-        return format_html('<span style="color: gray;">○ Not enriched</span>')
-
-    enrichment_status.short_description = "Status"
-
-    def enrich_selected(self, request, queryset):
-        """Action to enrich selected companies."""
-        count = 0
-        for company in queryset:
-            if company.enrich(force=True):
-                count += 1
-
-        self.message_user(
-            request, f"Successfully enriched {count} of {queryset.count()} companies."
-        )
-
-    enrich_selected.short_description = "Enrich selected companies"
+    description_preview.short_description = _("Description")
 
 
 @admin.register(CompanyData)
@@ -145,32 +78,33 @@ class CompanyDataAdmin(admin.ModelAdmin):
 
     list_display = [
         "company",
-        "country",
+        "source",
+        "country_code",
         "data_type",
         "value_type",
         "value_preview",
         "created_at",
     ]
-    list_filter = ["country", "data_type", "value_type", "created_at"]
-    search_fields = ["company__name", "value", "data_type"]
+    list_filter = ["source", "country_code", "data_type", "value_type", "created_at"]
+    search_fields = ["company__name", "value", "data_type", "source"]
     readonly_fields = ["created_at", "updated_at", "value_display"]
 
     fieldsets = (
         (
-            "Data",
+            _("Data"),
             {
-                "fields": ("company", "country", "data_type", "value_type", "value"),
+                "fields": ("company", "source", "country_code", "data_type", "value_type", "value"),
             },
         ),
         (
-            "Value Preview",
+            _("Value Preview"),
             {
                 "fields": ("value_display",),
                 "classes": ("collapse",),
             },
         ),
         (
-            "Metadata",
+            _("Metadata"),
             {
                 "fields": ("created_at", "updated_at"),
                 "classes": ("collapse",),
@@ -184,7 +118,7 @@ class CompanyDataAdmin(admin.ModelAdmin):
             return f"{obj.value[:50]}..."
         return obj.value
 
-    value_preview.short_description = "Value"
+    value_preview.short_description = _("Value")
 
     def value_display(self, obj):
         """Display the value converted to its proper type."""
@@ -193,50 +127,83 @@ class CompanyDataAdmin(admin.ModelAdmin):
             return f"Type: {obj.value_type}, Value: {converted} (type: {type(converted).__name__})"
         return "-"
 
-    value_display.short_description = "Converted Value"
+    value_display.short_description = _("Converted Value")
 
 
-@admin.register(CompanyCountryData)
-class CompanyCountryDataAdmin(admin.ModelAdmin):
-    """Admin interface for CompanyCountryData model."""
+@admin.register(CompanyDocument)
+class CompanyDocumentAdmin(admin.ModelAdmin):
+    """Admin interface for CompanyDocument model."""
 
     list_display = [
         "company",
-        "country",
-        "siren",
-        "siret",
-        "rna",
-        "legal_form",
+        "source",
+        "country_code",
+        "document_type",
+        "title",
+        "date",
         "created_at",
     ]
-    list_filter = ["country", "legal_form", "created_at"]
-    search_fields = ["company__name", "siren", "siret", "rna"]
+    list_filter = ["source", "country_code", "document_type", "date", "created_at"]
+    search_fields = ["company__name", "title", "document_type", "source"]
     readonly_fields = ["created_at", "updated_at"]
 
     fieldsets = (
         (
-            "Company",
+            _("Document"),
             {
-                "fields": ("company", "country"),
+                "fields": ("company", "source", "country_code", "document_type", "title", "date", "url"),
             },
         ),
         (
-            "French Data",
+            _("Content"),
             {
-                "fields": ("siren", "siret", "rna", "ape", "legal_form", "rcs"),
+                "fields": ("content",),
             },
         ),
         (
-            "Extra Data",
+            _("Metadata"),
             {
-                "fields": ("extra_data",),
+                "fields": ("metadata", "created_at", "updated_at"),
                 "classes": ("collapse",),
             },
         ),
+    )
+
+
+@admin.register(CompanyEvent)
+class CompanyEventAdmin(admin.ModelAdmin):
+    """Admin interface for CompanyEvent model."""
+
+    list_display = [
+        "company",
+        "source",
+        "country_code",
+        "event_type",
+        "title",
+        "date",
+        "created_at",
+    ]
+    list_filter = ["source", "country_code", "event_type", "date", "created_at"]
+    search_fields = ["company__name", "title", "event_type", "source"]
+    readonly_fields = ["created_at", "updated_at"]
+
+    fieldsets = (
         (
-            "Metadata",
+            _("Event"),
             {
-                "fields": ("created_at", "updated_at"),
+                "fields": ("company", "source", "country_code", "event_type", "title", "date"),
+            },
+        ),
+        (
+            _("Description"),
+            {
+                "fields": ("description",),
+            },
+        ),
+        (
+            _("Metadata"),
+            {
+                "fields": ("metadata", "created_at", "updated_at"),
                 "classes": ("collapse",),
             },
         ),

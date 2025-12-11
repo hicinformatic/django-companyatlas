@@ -44,6 +44,11 @@ python dev.py venv                  # Créer l'environnement virtuel
 python dev.py install-dev           # Installer les dépendances
 python dev.py update-companyatlas   # Installer python-companyatlas
 
+# Optionnel : Installer flagpy pour les images de drapeaux dans l'admin
+# Sur Fedora : sudo dnf install gcc-c++ python3-devel
+# Puis : pip install flagpy>=1.0.0
+# Note : flagpy est optionnel - l'admin utilisera des emojis drapeaux en fallback
+
 # Database
 python dev.py migrate               # Créer la base de données
 python dev.py createsuperuser       # Créer un super utilisateur

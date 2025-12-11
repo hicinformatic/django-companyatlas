@@ -22,5 +22,8 @@ django-debug-toolbar>=4.2
 python-dotenv>=1.0
 
 # Flag display (optional, for backend admin)
-flagpy>=1.0.0
+# Note: flagpy requires C++ compiler (gcc-c++ on Fedora)
+# Install system dependencies first: sudo dnf install gcc-c++ python3-devel
+# Then install flagpy: pip install flagpy>=1.0.0
+# flagpy>=1.0.0
 

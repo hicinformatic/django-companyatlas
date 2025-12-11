@@ -1,256 +1,121 @@
 """Company models with international and country-specific data."""
 
-from django.conf import settings
-from django.core.validators import MinLengthValidator
 from django.db import models
-from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class Company(models.Model):
-    """International company information model.
+    """Company model - parent model for company data, documents, and events."""
 
-    Contains data that is universal across all countries.
-    """
-
-    # Universal identifiers
-    domain = models.CharField(
+    name = models.CharField(
         max_length=255,
-        unique=True,
+        verbose_name=_("Name"),
+        help_text=_("Company name"),
+    )
+    description = models.TextField(
         blank=True,
-        null=True,
-        help_text="Company domain (e.g., example.com)",
-    )
-    vat_number = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text="VAT/Tax identification number (international)",
-    )
-    stock_symbol = models.CharField(
-        max_length=10, blank=True, null=True, help_text="Stock ticker symbol"
+        verbose_name=_("Description"),
+        help_text=_("Company description"),
     )
 
-    # Basic information (universal)
-    name = models.CharField(max_length=255, help_text="Company name")
-    legal_name = models.CharField(max_length=255, blank=True, help_text="Legal/registered name")
-    description = models.TextField(blank=True, help_text="Company description")
-
-    # Universal details
-    founded_year = models.IntegerField(null=True, blank=True, help_text="Year founded")
-    employee_count = models.IntegerField(null=True, blank=True, help_text="Number of employees")
-    industry = models.CharField(max_length=100, blank=True, help_text="Industry/sector")
-    website = models.URLField(blank=True, help_text="Company website")
-
-    # Location (universal)
-    country = models.CharField(
-        max_length=2, blank=True, help_text="ISO country code (e.g., FR, US, GB)"
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created at"),
     )
-    city = models.CharField(max_length=100, blank=True, help_text="City")
-    address = models.TextField(blank=True, help_text="Full address")
-
-    # Enrichment metadata
-    is_enriched = models.BooleanField(
-        default=False, help_text="Whether company data has been enriched"
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated at"),
     )
-    enriched_at = models.DateTimeField(null=True, blank=True, help_text="Last enrichment timestamp")
-    enrichment_data = models.JSONField(default=dict, blank=True, help_text="Raw enrichment data")
-
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Company"
-        verbose_name_plural = "Companies"
+        verbose_name = _("Company")
+        verbose_name_plural = _("Companies")
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["domain"]),
-            models.Index(fields=["vat_number"]),
-            models.Index(fields=["country"]),
             models.Index(fields=["-created_at"]),
         ]
 
     def __str__(self):
         return self.name
 
-    def get_country_data(self, country_code: str | None = None):
-        """Get country-specific data for this company.
 
-        Args:
-            country_code: ISO country code (defaults to self.country)
+class CompanySourceBase(models.Model):
+    """Abstract base class for company-related models with source and country."""
 
-        Returns:
-            CompanyCountryData instance or None
-        """
-        country_code = country_code or self.country
-        if not country_code:
-            return None
+    source = models.CharField(
+        max_length=100,
+        verbose_name=_("Source"),
+        help_text=_("Backend source (e.g., 'insee', 'pappers', 'infogreffe')"),
+    )
+    country_code = models.CharField(
+        max_length=2,
+        verbose_name=_("Country Code"),
+        help_text=_("ISO country code (e.g., FR, US, GB)"),
+    )
 
-        try:
-            return self.country_data.get(country=country_code.upper())
-        except CompanyCountryData.DoesNotExist:
-            return None
-
-    def get_data_value(self, country_code: str, data_type: str):
-        """Get a specific data value for a country.
-
-        Args:
-            country_code: ISO country code (e.g., "FR")
-            data_type: Type of data (e.g., "denomination", "siren", "rna")
-
-        Returns:
-            Data value converted to its proper type, or None
-        """
-        try:
-            data = self.data.get(country=country_code.upper(), data_type=data_type)
-            return data.get_value()
-        except CompanyData.DoesNotExist:
-            return None
-
-    def set_data_value(self, country_code: str, data_type: str, value, value_type: str | None = None):
-        """Set a specific data value for a country.
-
-        Args:
-            country_code: ISO country code (e.g., "FR")
-            data_type: Type of data (e.g., "denomination", "siren", "rna")
-            value: Value to set (can be str, int, float, dict, list)
-            value_type: Optional value type override (auto-detected if not provided)
-        """
-        data, created = CompanyData.objects.get_or_create(
-            company=self, country=country_code.upper(), data_type=data_type, defaults={}
-        )
-        if value_type:
-            data.value_type = value_type
-            data.value = str(value)
-        else:
-            data.set_value(value)
-        data.save()
-
-    def enrich(self, force=False):
-        """Enrich company data using python-companyatlas.
-
-        Args:
-            force: Force enrichment even if recently enriched
-
-        Returns:
-            bool: True if enrichment was successful
-        """
-        try:
-            from python_companyatlas import CompanyAtlas
-        except ImportError:
-            return False
-
-        # Check if we should enrich
-        if not force and self.is_enriched and self.enriched_at:
-            cache_timeout = getattr(settings, "COMPANYATLAS", {}).get("CACHE_TIMEOUT", 3600)
-            if (timezone.now() - self.enriched_at).total_seconds() < cache_timeout:
-                return True
-
-        # Get API configuration
-        config = getattr(settings, "COMPANYATLAS", {})
-        api_key = config.get("API_KEY")
-
-        # Create client and lookup
-        atlas = CompanyAtlas(api_key=api_key, config=config)
-
-        try:
-            # Lookup company by domain
-            result = atlas.lookup(self.domain)
-
-            # Update fields from result
-            if result.get("name"):
-                self.name = result["name"]
-            if result.get("founded_year"):
-                self.founded_year = result["founded_year"]
-            if result.get("employee_count"):
-                self.employee_count = result["employee_count"]
-            if result.get("industry"):
-                self.industry = result["industry"]
-
-            # Store raw data
-            self.enrichment_data = result
-            self.is_enriched = True
-            self.enriched_at = timezone.now()
-            self.save()
-
-            return True
-        except Exception:
-            return False
-
-    def save(self, *args, **kwargs):
-        """Override save to handle auto-enrichment."""
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
-
-        # Auto-enrich on creation if enabled
-        if is_new:
-            config = getattr(settings, "COMPANYATLAS", {})
-            if config.get("AUTO_ENRICH", False):
-                self.enrich()
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(fields=["source", "country_code"]),
+            models.Index(fields=["country_code"]),
+        ]
 
 
-class CompanyData(models.Model):
-    """Flexible key-value data storage for country-specific company information.
-
-    Allows storing arbitrary data like:
-    - france, denomination, "Tour Eiffel" (str)
-    - france, siren, "123456789" (str)
-    - france, capital, 100000.50 (float)
-    - france, employees, 150 (int)
-    - france, metadata, {"key": "value"} (json)
-    """
-
-    VALUE_TYPE_CHOICES = [
-        ("str", "String"),
-        ("int", "Integer"),
-        ("float", "Float"),
-        ("json", "JSON"),
-    ]
+class CompanyData(CompanySourceBase):
+    """Company data from various backends."""
 
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name="data",
-        help_text="Company this data belongs to",
+        verbose_name=_("Company"),
+        help_text=_("Company this data belongs to"),
     )
-    country = models.CharField(max_length=2, help_text="ISO country code (e.g., FR, US, GB)")
     data_type = models.CharField(
-        max_length=100, help_text="Type of data (e.g., denomination, siren, capital, employees)"
+        max_length=100,
+        verbose_name=_("Data Type"),
+        help_text=_("Type of data (e.g., denomination, siren, capital, employees)"),
+    )
+    value = models.TextField(
+        verbose_name=_("Value"),
+        help_text=_("Data value"),
     )
     value_type = models.CharField(
         max_length=10,
-        choices=VALUE_TYPE_CHOICES,
+        verbose_name=_("Value Type"),
+        choices=[
+            ("str", _("String")),
+            ("int", _("Integer")),
+            ("float", _("Float")),
+            ("json", _("JSON")),
+        ],
         default="str",
-        help_text="Type of the value (str, int, float, json)",
-    )
-    value = models.TextField(
-        help_text="Data value (stored as string, converted based on value_type)"
+        help_text=_("Type of the value (str, int, float, json)"),
     )
 
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created at"),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated at"),
+    )
 
     class Meta:
-        verbose_name = "Company Data"
-        verbose_name_plural = "Company Data"
-        unique_together = [["company", "country", "data_type"]]
+        verbose_name = _("Company Data")
+        verbose_name_plural = _("Company Data")
+        unique_together = [["company", "source", "country_code", "data_type"]]
         indexes = [
-            models.Index(fields=["company", "country"]),
-            models.Index(fields=["country", "data_type"]),
+            models.Index(fields=["company", "country_code"]),
             models.Index(fields=["data_type"]),
-            models.Index(fields=["value_type"]),
         ]
 
     def __str__(self):
-        return f"{self.company.name} - {self.country} - {self.data_type}: {self.value}"
+        return f"{self.company.name} - {self.source} - {self.country_code} - {self.data_type}"
 
     def get_value(self):
-        """Get the value converted to its proper type.
-
-        Returns:
-            Value converted to the appropriate type (str, int, float, or dict/list)
-        """
+        """Get the value converted to its proper type."""
         if self.value_type == "int":
             try:
                 return int(self.value)
@@ -268,15 +133,11 @@ class CompanyData(models.Model):
                 return json.loads(self.value)
             except (json.JSONDecodeError, TypeError):
                 return None
-        else:  # str
+        else:
             return self.value
 
     def set_value(self, value):
-        """Set the value, automatically detecting the type.
-
-        Args:
-            value: Value to set (will be converted to string and type detected)
-        """
+        """Set the value, automatically detecting the type."""
         if isinstance(value, (dict, list)):
             import json
 
@@ -293,85 +154,126 @@ class CompanyData(models.Model):
             self.value_type = "str"
 
 
-class CompanyCountryData(models.Model):
-    """Structured country-specific company data.
-
-    Contains normalized fields for specific countries.
-    For France, this would include SIREN, SIRET, RNA, etc.
-    """
+class CompanyDocument(CompanySourceBase):
+    """Company documents from various backends."""
 
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        related_name="country_data",
-        help_text="Company this data belongs to",
+        related_name="documents",
+        verbose_name=_("Company"),
+        help_text=_("Company this document belongs to"),
     )
-    country = models.CharField(max_length=2, help_text="ISO country code (e.g., FR, US, GB)")
-
-    # French-specific fields
-    siren = models.CharField(
-        max_length=9,
-        blank=True,
+    document_type = models.CharField(
+        max_length=100,
+        verbose_name=_("Document Type"),
+        help_text=_("Type of document (e.g., bodacc, kbis, balo)"),
+    )
+    title = models.CharField(
+        max_length=255,
+        verbose_name=_("Title"),
+        help_text=_("Document title"),
+    )
+    date = models.DateField(
         null=True,
-        validators=[MinLengthValidator(9)],
-        help_text="French SIREN number (9 digits)",
-    )
-    siret = models.CharField(
-        max_length=14,
         blank=True,
-        null=True,
-        validators=[MinLengthValidator(14)],
-        help_text="French SIRET number (14 digits)",
+        verbose_name=_("Date"),
+        help_text=_("Document date"),
     )
-    rna = models.CharField(
-        max_length=10, blank=True, null=True, help_text="French RNA number (W + 8 digits)"
+    url = models.URLField(
+        blank=True,
+        verbose_name=_("URL"),
+        help_text=_("URL to access the document"),
     )
-    ape = models.CharField(max_length=5, blank=True, null=True, help_text="French APE/NAF code")
-    legal_form = models.CharField(
-        max_length=50, blank=True, null=True, help_text="Legal form (SARL, SA, etc.)"
+    content = models.TextField(
+        blank=True,
+        verbose_name=_("Content"),
+        help_text=_("Document content or summary"),
     )
-    rcs = models.CharField(
-        max_length=50, blank=True, null=True, help_text="RCS registration number"
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Metadata"),
+        help_text=_("Additional document metadata"),
     )
 
-    # Additional country-specific data stored as JSON
-    extra_data = models.JSONField(
-        default=dict, blank=True, help_text="Additional country-specific data"
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created at"),
     )
-
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated at"),
+    )
 
     class Meta:
-        verbose_name = "Company Country Data"
-        verbose_name_plural = "Company Country Data"
-        unique_together = [["company", "country"]]
+        verbose_name = _("Company Document")
+        verbose_name_plural = _("Company Documents")
         indexes = [
-            models.Index(fields=["company", "country"]),
-            models.Index(fields=["country", "siren"]),
-            models.Index(fields=["siren"]),
-            models.Index(fields=["siret"]),
-            models.Index(fields=["rna"]),
+            models.Index(fields=["company", "country_code"]),
+            models.Index(fields=["document_type"]),
+            models.Index(fields=["date"]),
         ]
 
     def __str__(self):
-        return f"{self.company.name} - {self.country}"
+        return f"{self.company.name} - {self.source} - {self.document_type}"
 
-    def get_data_dict(self) -> dict:
-        """Get all data as a dictionary.
 
-        Returns:
-            Dictionary with all country-specific data
-        """
-        data = {
-            "country": self.country,
-            "siren": self.siren,
-            "siret": self.siret,
-            "rna": self.rna,
-            "ape": self.ape,
-            "legal_form": self.legal_form,
-            "rcs": self.rcs,
-        }
-        data.update(self.extra_data)
-        return {k: v for k, v in data.items() if v is not None and v != ""}
+class CompanyEvent(CompanySourceBase):
+    """Company events from various backends."""
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="events",
+        verbose_name=_("Company"),
+        help_text=_("Company this event belongs to"),
+    )
+    event_type = models.CharField(
+        max_length=100,
+        verbose_name=_("Event Type"),
+        help_text=_("Type of event (e.g., status_change, modification, capital_change)"),
+    )
+    title = models.CharField(
+        max_length=255,
+        verbose_name=_("Title"),
+        help_text=_("Event title"),
+    )
+    date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("Date"),
+        help_text=_("Event date"),
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name=_("Description"),
+        help_text=_("Event description"),
+    )
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Metadata"),
+        help_text=_("Additional event metadata"),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created at"),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated at"),
+    )
+
+    class Meta:
+        verbose_name = _("Company Event")
+        verbose_name_plural = _("Company Events")
+        indexes = [
+            models.Index(fields=["company", "country_code"]),
+            models.Index(fields=["event_type"]),
+            models.Index(fields=["date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.source} - {self.event_type}"

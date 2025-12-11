@@ -13,8 +13,142 @@ except ImportError:
         InMemoryQuerySet = None
 
 
+class SimpleInMemoryQuerySet:
+    """Simple in-memory QuerySet implementation when virtualqueryset is not available."""
+
+    def __init__(self, model, data=None):
+        self.model = model
+        self._data = list(data) if data is not None else []
+        self._result_cache = None
+        self._ordering = []
+
+    def __iter__(self):
+        if self._result_cache is None:
+            self._result_cache = list(self._data)
+            if self._ordering:
+                self._apply_ordering()
+        return iter(self._result_cache)
+
+    def __getitem__(self, k):
+        if self._result_cache is None:
+            self._result_cache = list(self._data)
+            if self._ordering:
+                self._apply_ordering()
+        return self._result_cache[k]
+
+    def __len__(self):
+        if self._result_cache is None:
+            self._result_cache = list(self._data)
+            if self._ordering:
+                self._apply_ordering()
+        return len(self._result_cache)
+
+    def _apply_ordering(self):
+        """Apply ordering to result cache."""
+        if not self._ordering:
+            return
+        
+        def get_sort_key(obj):
+            keys = []
+            for field in self._ordering:
+                reverse = field.startswith('-')
+                field_name = field.lstrip('-')
+                value = getattr(obj, field_name, None)
+                if value is None:
+                    value = ""
+                if isinstance(value, str):
+                    value = value.lower()
+                keys.append(value)
+            return tuple(keys)
+        
+        # Sort with multiple passes for each field
+        for field in reversed(self._ordering):
+            reverse = field.startswith('-')
+            field_name = field.lstrip('-')
+            
+            def get_field_value(obj):
+                value = getattr(obj, field_name, None)
+                if value is None:
+                    value = ""
+                if isinstance(value, str):
+                    value = value.lower()
+                return value
+            
+            self._result_cache.sort(key=get_field_value, reverse=reverse)
+
+    def count(self):
+        return len(self._data)
+
+    def all(self):
+        return self
+
+    def none(self):
+        qs = SimpleInMemoryQuerySet(self.model, [])
+        qs._ordering = self._ordering
+        return qs
+
+    def order_by(self, *field_names):
+        """Order the queryset by the given fields."""
+        qs = SimpleInMemoryQuerySet(self.model, self._data)
+        qs._ordering = list(field_names)
+        return qs
+
+    def filter(self, **kwargs):
+        filtered = []
+        for obj in self._data:
+            match = True
+            for key, value in kwargs.items():
+                if not hasattr(obj, key) or getattr(obj, key) != value:
+                    match = False
+                    break
+            if match:
+                filtered.append(obj)
+        qs = SimpleInMemoryQuerySet(self.model, filtered)
+        qs._ordering = self._ordering
+        return qs
+
+    def exclude(self, **kwargs):
+        filtered = []
+        for obj in self._data:
+            match = False
+            for key, value in kwargs.items():
+                if hasattr(obj, key) and getattr(obj, key) == value:
+                    match = True
+                    break
+            if not match:
+                filtered.append(obj)
+        qs = SimpleInMemoryQuerySet(self.model, filtered)
+        qs._ordering = self._ordering
+        return qs
+
+    def exists(self):
+        """Check if queryset has any results."""
+        return len(self._data) > 0
+
+    def first(self):
+        """Return the first object or None."""
+        if self._data:
+            if self._result_cache is None:
+                self._result_cache = list(self._data)
+                if self._ordering:
+                    self._apply_ordering()
+            return self._result_cache[0] if self._result_cache else None
+        return None
+
+    def get(self, **kwargs):
+        """Get a single object matching the given criteria."""
+        filtered = self.filter(**kwargs)
+        if len(filtered) == 0:
+            raise self.model.DoesNotExist(f"{self.model.__name__} matching query does not exist.")
+        if len(filtered) > 1:
+            raise self.model.MultipleObjectsReturned(
+                f"get() returned more than one {self.model.__name__} -- it returned {len(filtered)}!"
+            )
+        return filtered.first()
+
+
 class BackendInfoQuerySet(  # type: ignore[misc]
-    InMemoryQuerySet if InMemoryQuerySet else models.QuerySet
+    InMemoryQuerySet if InMemoryQuerySet else SimpleInMemoryQuerySet
 ):
     """In-memory QuerySet for backend info."""
 
@@ -34,10 +168,7 @@ class BackendInfoManager(models.Manager):
             apps.check_apps_ready()
         except Exception:
             # If apps aren't ready, return empty queryset
-            if InMemoryQuerySet:
-                return BackendInfoQuerySet(model=self.model, data=[])
-            else:
-                return BackendInfoQuerySet(model=self.model).none()
+            return BackendInfoQuerySet(model=self.model, data=[])
 
         try:
             # Get configuration from Django settings (only after apps are ready)
@@ -52,9 +183,9 @@ class BackendInfoManager(models.Manager):
             for status in statuses:
                 try:
                     backend = BackendInfo(
-                        pk=status.get("backend_name", "unknown"),  # Use name as pk
-                        name=status.get("backend_name", "unknown"),
-                        display_name=status.get("backend_display_name", ""),
+                        pk=status.get("name", "unknown"),  # Use name as pk
+                        name=status.get("name", "unknown"),
+                        display_name=status.get("display_name", ""),
                         continent=status.get("continent", ""),
                         country_code=status.get("country_code", ""),
                         status=status.get("status", "unknown"),
@@ -69,6 +200,9 @@ class BackendInfoManager(models.Manager):
                     backend._missing_config = status.get("missing_config", [])
                     backend._country_flag = status.get("country_flag", "")
                     backend._country_flag_image = status.get("country_flag_image", "")
+                    backend._can_fetch_documents = status.get("can_fetch_documents", False)
+                    backend._can_fetch_events = status.get("can_fetch_events", False)
+                    backend._can_fetch_company_data = status.get("can_fetch_company_data", True)
                     backends_list.append(backend)
                 except Exception as e:
                     # Log error for individual backend but continue
@@ -76,15 +210,11 @@ class BackendInfoManager(models.Manager):
 
                     logger = logging.getLogger(__name__)
                     logger.warning(
-                        f"Error creating BackendInfo for {status.get('backend_name')}: {e}"
+                        f"Error creating BackendInfo for {status.get('name')}: {e}"
                     )
 
             # Return an in-memory QuerySet
-            if InMemoryQuerySet:
-                return BackendInfoQuerySet(model=self.model, data=backends_list)
-            else:
-                # Fallback: return empty queryset if InMemoryQuerySet not available
-                return BackendInfoQuerySet(model=self.model).none()
+            return BackendInfoQuerySet(model=self.model, data=backends_list)
 
         except Exception as e:
             # Log error for debugging
@@ -93,10 +223,7 @@ class BackendInfoManager(models.Manager):
             logger = logging.getLogger(__name__)
             logger.error(f"Error loading backends: {e}", exc_info=True)
             # Return empty queryset on error
-            if InMemoryQuerySet:
-                return BackendInfoQuerySet(model=self.model, data=[])
-            else:
-                return BackendInfoQuerySet(model=self.model).none()
+            return BackendInfoQuerySet(model=self.model, data=[])
 
 
 class BackendInfo(models.Model):
@@ -229,3 +356,18 @@ class BackendInfo(models.Model):
             "unavailable": _("❌ Unavailable"),
         }
         return labels.get(self.status, _("❓ Unknown"))
+
+    @property
+    def can_fetch_documents(self):
+        """Get can_fetch_documents capability."""
+        return getattr(self, "_can_fetch_documents", False)
+
+    @property
+    def can_fetch_events(self):
+        """Get can_fetch_events capability."""
+        return getattr(self, "_can_fetch_events", False)
+
+    @property
+    def can_fetch_company_data(self):
+        """Get can_fetch_company_data capability."""
+        return getattr(self, "_can_fetch_company_data", True)

@@ -72,6 +72,11 @@ python dev.py venv
 python dev.py install-dev
 python dev.py update-companyatlas  # Install local python-companyatlas
 
+# Optional: Install flagpy for flag images in admin (requires C++ compiler)
+# On Fedora: sudo dnf install gcc-c++ python3-devel
+# Then: pip install flagpy>=1.0.0
+# Note: flagpy is optional - admin will use emoji flags as fallback
+
 # Database
 python dev.py migrate
 python dev.py createsuperuser
