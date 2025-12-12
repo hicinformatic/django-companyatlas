@@ -2,7 +2,17 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
 import django
+
+# Load .env file if it exists
+_env_file = Path(__file__).resolve().parent / ".env"
+if _env_file.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_env_file)
+    except ImportError:
+        pass
 
 
 def create_superuser():

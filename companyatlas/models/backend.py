@@ -203,6 +203,7 @@ class BackendInfoManager(models.Manager):
                     backend._can_fetch_documents = status.get("can_fetch_documents", False)
                     backend._can_fetch_events = status.get("can_fetch_events", False)
                     backend._can_fetch_company_data = status.get("can_fetch_company_data", True)
+                    backend._request_cost = status.get("request_cost", {"data": "free", "documents": "free", "events": "free"})
                     backends_list.append(backend)
                 except Exception as e:
                     # Log error for individual backend but continue

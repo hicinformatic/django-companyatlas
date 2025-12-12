@@ -135,18 +135,21 @@ class BackendInfoAdmin(admin.ModelAdmin):
         "status_display",
     ]
 
-    list_filter = [ContinentFilter, CountryFilter, StatusFilter]
+    list_filter = [ContinentFilter, CountryFilter]
 
     search_fields = ["name", "display_name", "country_code", "continent"]
 
     change_form_template = "admin/companyatlas/backendinfo/change_form.html"
+
 
     readonly_fields = [
         "name",
         "display_name",
         "continent",
         "country_code_display",
-        "capabilities_display_detail",
+        "company_data_capability",
+        "documents_capability",
+        "events_capability",
         "status_display_detail",
         "packages_display_detail",
         "config_display_detail",
@@ -174,7 +177,9 @@ class BackendInfoAdmin(admin.ModelAdmin):
             _("Capabilities"),
             {
                 "fields": (
-                    "capabilities_display_detail",
+                    "company_data_capability",
+                    "documents_capability",
+                    "events_capability",
                 )
             },
         ),
@@ -449,7 +454,7 @@ class BackendInfoAdmin(admin.ModelAdmin):
 
         packages = obj.packages
         if not packages:
-            return format_html(
+            return mark_safe(
                 '<span style="color: #6c757d; white-space: nowrap; font-style: italic;">No specific packages required for this backend.</span>'
             )
 
@@ -546,7 +551,7 @@ class BackendInfoAdmin(admin.ModelAdmin):
         config_status = obj.diagnostic.get("config", {})
 
         if not config_status:
-            return format_html(
+            return mark_safe(
                 '<p style="color: #666;">No specific configuration required for this backend.</p>'
             )
 
@@ -663,78 +668,89 @@ class BackendInfoAdmin(admin.ModelAdmin):
             return format_html('<p style="color: #666;">{}</p>', description)
         return mark_safe('<p style="color: #ccc; font-style: italic;">No description available</p>')
 
-    @admin.display(description=_("Company Data"), boolean=True)
+    @admin.display(description=_("Company Data"))
     def can_fetch_company_data(self, obj):
-        """Display if backend can fetch company data."""
+        """Display if backend can fetch company data with cost."""
         if not obj:
-            return False
-        return obj.can_fetch_company_data
+            return "-"
+        if not obj.can_fetch_company_data:
+            return "-"
+        cost = getattr(obj, "_request_cost", {}).get("data", "free")
+        if cost == "free":
+            return mark_safe('<span style="color: #198754;">✓</span> (free)')
+        cost_str = f"{cost:.2f}" if isinstance(cost, (int, float)) else str(cost)
+        return format_html('<span style="color: #198754;">✓</span> ({})', cost_str)
 
-    @admin.display(description=_("Documents"), boolean=True)
+    @admin.display(description=_("Documents"))
     def can_fetch_documents(self, obj):
-        """Display if backend can fetch documents."""
+        """Display if backend can fetch documents with cost."""
         if not obj:
-            return False
-        return obj.can_fetch_documents
+            return "-"
+        if not obj.can_fetch_documents:
+            return "-"
+        cost = getattr(obj, "_request_cost", {}).get("documents", "free")
+        if cost == "free":
+            return mark_safe('<span style="color: #198754;">✓</span> (free)')
+        cost_str = f"{cost:.2f}" if isinstance(cost, (int, float)) else str(cost)
+        return format_html('<span style="color: #198754;">✓</span> ({})', cost_str)
 
-    @admin.display(description=_("Events"), boolean=True)
+    @admin.display(description=_("Events"))
     def can_fetch_events(self, obj):
-        """Display if backend can fetch events."""
+        """Display if backend can fetch events with cost."""
         if not obj:
-            return False
-        return obj.can_fetch_events
+            return "-"
+        if not obj.can_fetch_events:
+            return "-"
+        cost = getattr(obj, "_request_cost", {}).get("events", "free")
+        if cost == "free":
+            return mark_safe('<span style="color: #198754;">✓</span> (free)')
+        cost_str = f"{cost:.2f}" if isinstance(cost, (int, float)) else str(cost)
+        return format_html('<span style="color: #198754;">✓</span> ({})', cost_str)
 
-    @admin.display(description=_("Capabilities"))
-    def capabilities_display_detail(self, obj):
-        """Display detailed backend capabilities."""
+    @admin.display(description=_("Company Data"))
+    def company_data_capability(self, obj):
+        """Display company data capability."""
         if not obj:
-            return mark_safe('<p style="color: #666;">No backend selected.</p>')
-        
-        rows = []
-        capabilities = [
-            ("Company Data", obj.can_fetch_company_data),
-            ("Documents", obj.can_fetch_documents),
-            ("Events", obj.can_fetch_events),
-        ]
-        
-        for name, enabled in capabilities:
-            if enabled:
-                icon = mark_safe('<span style="color: #198754; font-weight: bold;">✓</span>')
-                status_text = mark_safe('<span style="color: #198754;">Enabled</span>')
+            return "-"
+        request_cost = getattr(obj, "_request_cost", {})
+        cost = request_cost.get("data", "free")
+        if obj.can_fetch_company_data:
+            if cost == "free":
+                return mark_safe('<span style="color: #198754; font-weight: bold;">✓</span> <span style="color: #198754;">Enabled (free)</span>')
             else:
-                icon = mark_safe('<span style="color: #6c757d; font-weight: bold;">○</span>')
-                status_text = mark_safe('<span style="color: #6c757d;">Not available</span>')
-            
-            rows.append(
-                format_html(
-                    "<tr>"
-                    '<td style="padding: 8px; width: 30px;">{}</td>'
-                    '<td style="padding: 8px; font-weight: 500;">{}</td>'
-                    '<td style="padding: 8px;">{}</td>'
-                    "</tr>",
-                    icon,
-                    name,
-                    status_text,
-                )
-            )
-        
-        rows_html = mark_safe("".join(str(row) for row in rows))
-        table_html = format_html(
-            """
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-                <tr style="background-color: #f8f9fa;">
-                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6; width: 30px;"></th>
-                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Capability</th>
-                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {}
-            </tbody>
-        </table>
-        """,
-            rows_html,
-        )
-        
-        return table_html
+                cost_str = f"{cost:.2f}" if isinstance(cost, (int, float)) else str(cost)
+                return mark_safe(f'<span style="color: #198754; font-weight: bold;">✓</span> <span style="color: #198754;">Enabled ({cost_str})</span>')
+        else:
+            return mark_safe('<span style="color: #6c757d; font-weight: bold;">○</span> <span style="color: #6c757d;">Not available</span>')
+
+    @admin.display(description=_("Documents"))
+    def documents_capability(self, obj):
+        """Display documents capability."""
+        if not obj:
+            return "-"
+        request_cost = getattr(obj, "_request_cost", {})
+        cost = request_cost.get("documents", "free")
+        if obj.can_fetch_documents:
+            if cost == "free":
+                return mark_safe('<span style="color: #198754; font-weight: bold;">✓</span> <span style="color: #198754;">Enabled (free)</span>')
+            else:
+                cost_str = f"{cost:.2f}" if isinstance(cost, (int, float)) else str(cost)
+                return mark_safe(f'<span style="color: #198754; font-weight: bold;">✓</span> <span style="color: #198754;">Enabled ({cost_str})</span>')
+        else:
+            return mark_safe('<span style="color: #6c757d; font-weight: bold;">○</span> <span style="color: #6c757d;">Not available</span>')
+
+    @admin.display(description=_("Events"))
+    def events_capability(self, obj):
+        """Display events capability."""
+        if not obj:
+            return "-"
+        request_cost = getattr(obj, "_request_cost", {})
+        cost = request_cost.get("events", "free")
+        if obj.can_fetch_events:
+            if cost == "free":
+                return mark_safe('<span style="color: #198754; font-weight: bold;">✓</span> <span style="color: #198754;">Enabled (free)</span>')
+            else:
+                cost_str = f"{cost:.2f}" if isinstance(cost, (int, float)) else str(cost)
+                return mark_safe(f'<span style="color: #198754; font-weight: bold;">✓</span> <span style="color: #198754;">Enabled ({cost_str})</span>')
+        else:
+            return mark_safe('<span style="color: #6c757d; font-weight: bold;">○</span> <span style="color: #6c757d;">Not available</span>')
