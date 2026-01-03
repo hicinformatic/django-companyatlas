@@ -112,6 +112,3 @@ class CompanyData(CompanyAtlasSourceBase):
             self.value = str(value)
             self.value_type = "str"
 
-
-
-

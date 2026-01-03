@@ -47,8 +47,6 @@ class CompanyDocument(CompanyAtlasSourceBase):
         help_text=_("Additional document metadata"),
     )
 
-
-
     class Meta:
         verbose_name = _("Company Document")
         verbose_name_plural = _("Company Documents")
