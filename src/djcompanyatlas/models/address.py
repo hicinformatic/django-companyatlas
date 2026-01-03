@@ -1,0 +1,36 @@
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from .company import Company
+from .source import CompanyAtlasSourceBase
+from djgeoaddress.fields import GeoAddressField
+
+class CompanyAtlasAddress(CompanyAtlasSourceBase):
+    """Company addresses from various backends."""
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="addresses",
+        verbose_name=_("Company"),
+        help_text=_("Company this address belongs to"),
+    )
+    address = GeoAddressField(
+        verbose_name=_("Address"),
+        help_text=_("Company address"),
+    )
+    is_headquarters = models.BooleanField(
+        default=False,
+        verbose_name=_("Is headquarters"),
+        help_text=_("Whether this address is the company's headquarters"),
+    )
+
+    class Meta:
+        verbose_name = _("Company Address")
+        verbose_name_plural = _("Company Addresses")
+        indexes = [
+            models.Index(fields=["company", "address"]),
+            models.Index(fields=["company", "is_headquarters"]),
+        ]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.address}"

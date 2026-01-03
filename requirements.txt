@@ -3,6 +3,7 @@
 
 # Core
 Django>=3.2
+django-geoaddress>=0.1.1
 
 # Company data library (install locally with: python dev.py update-companyatlas)
 # python-companyatlas>=0.1.0

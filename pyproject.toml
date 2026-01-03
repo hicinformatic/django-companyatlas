@@ -49,8 +49,8 @@ dev = [
 Homepage = "https://github.com/yourusername/django-companyatlas"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["companyatlas*"]
+where = ["src"]
+include = ["djcompanyatlas*"]
 exclude = ["tests*", "docs*"]
 
 [tool.pytest.ini_options]

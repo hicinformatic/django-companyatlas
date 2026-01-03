@@ -3,7 +3,7 @@
 import pytest
 from django.utils import timezone
 
-from companyatlas.models import Company
+from djcompanyatlas.models import Company
 
 
 @pytest.mark.django_db
@@ -27,7 +27,7 @@ class TestCompanyModel:
 
     def test_company_with_identifiers(self):
         """Test company with multiple identifiers."""
-        from companyatlas.models import CompanyCountryData
+        from djcompanyatlas.models import CompanyCountryData
 
         company = Company.objects.create(
             name="French Company", domain="french.fr", vat_number="FR12345678901", country="FR"
