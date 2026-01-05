@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from virtualqueryset.models import VirtualModel
 
-from ..managers.provider import ProviderManager
+from ...managers.virtuals.provider import ProviderManager
 
 
 class ProviderModel(VirtualModel):

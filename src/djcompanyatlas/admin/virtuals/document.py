@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from ...models.virtuals.document import CompanyAtlasVirtualCompany
+from ...models.virtuals.document import CompanyAtlasVirtualDocument
 
 
-@admin.register(CompanyAtlasVirtualCompany)
+@admin.register(CompanyAtlasVirtualDocument)
 class CompanyAtlasVirtualDocumentAdmin(admin.ModelAdmin):
     list_display = ["__str__"]
     readonly_fields = []

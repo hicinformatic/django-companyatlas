@@ -1,6 +1,15 @@
 # Development dependencies
 # Install with: pip install -r requirements-dev.txt
 
+-e ../python-qualitybase
+-e ../python-providerkit
+-e ../python-geoaddress
+-e ../python-companyatlas
+-e ../django-virtualqueryset
+-e ../django-admin-boost
+-e ../django-geoaddress
+-e .
+
 # Core
 Django>=3.2
 

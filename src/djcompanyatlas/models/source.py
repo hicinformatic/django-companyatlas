@@ -8,11 +8,13 @@ class CompanyAtlasSourceBase(models.Model):
         max_length=100,
         verbose_name=_("Source"),
         help_text=_("Backend source (e.g., 'insee', 'pappers', 'infogreffe')"),
+        default="N/A",
     )
     country_code = models.CharField(
         max_length=2,
         verbose_name=_("Country Code"),
         help_text=_("ISO country code (e.g., FR, US, GB)"),
+        default="NA",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,

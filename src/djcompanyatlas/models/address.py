@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from .company import Company
 from .source import CompanyAtlasSourceBase
-from djgeoaddress.fields import GeoAddressField
+from djgeoaddress.fields import GeoaddressField
 
 class CompanyAtlasAddress(CompanyAtlasSourceBase):
     """Company addresses from various backends."""
@@ -16,7 +16,7 @@ class CompanyAtlasAddress(CompanyAtlasSourceBase):
         verbose_name=_("Company"),
         help_text=_("Company this address belongs to"),
     )
-    address = GeoAddressField(
+    address = GeoaddressField(
         verbose_name=_("Address"),
         help_text=_("Company address"),
     )
