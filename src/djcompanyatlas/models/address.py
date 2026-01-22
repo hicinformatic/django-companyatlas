@@ -2,9 +2,11 @@
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from djgeoaddress.fields import GeoaddressField
+
 from .company import Company
 from .source import CompanyAtlasSourceBase
-from djgeoaddress.fields import GeoaddressField
+
 
 class CompanyAtlasAddress(CompanyAtlasSourceBase):
     """Company addresses from various backends."""

@@ -1,6 +1,6 @@
 from typing import Any
 
-from companyatlas.helpers import search_company, search_company_by_code
+from companyatlas.helpers import search_company, search_company_by_reference
 from virtualqueryset.managers import VirtualManager
 
 
@@ -30,7 +30,7 @@ class CompanyAtlasVirtualCompanyManager(VirtualManager):
             if self.backend:
                 self.attribute_search = {"name": self.backend}
             if self.code:
-                result = search_company_by_code(
+                result = search_company_by_reference(
                     self.code, first=self.first, attribute_search=self.attribute_search
                 )
             else:

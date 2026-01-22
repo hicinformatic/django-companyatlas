@@ -6,7 +6,8 @@
 -e ../python-geoaddress
 -e ../python-companyatlas
 -e ../django-virtualqueryset
--e ../django-admin-boost
+-e ../django-boosted
+-e ../django-providerkit
 -e ../django-geoaddress
 -e .
 

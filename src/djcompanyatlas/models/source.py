@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+
 class CompanyAtlasSourceBase(models.Model):
     """Abstract base class for company-related models with source and country."""
 

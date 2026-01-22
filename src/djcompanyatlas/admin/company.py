@@ -61,7 +61,10 @@ class CompanyDataAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at", "value_display"]
 
     fieldsets = (
-        (_("Data"), {"fields": ("company", "source", "country_code", "data_type", "value_type", "value")}),
+        (
+            _("Data"),
+            {"fields": ("company", "source", "country_code", "data_type", "value_type", "value")},
+        ),
         (_("Value Preview"), {"fields": ("value_display",), "classes": ("collapse",)}),
         (_("Metadata"), {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )

@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from .company import Company
 from .source import CompanyAtlasSourceBase
+
 
 class CompanyEvent(CompanyAtlasSourceBase):
     """Company events from various backends."""

@@ -25,7 +25,10 @@ class CompanyAtlasAddressAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
 
     fieldsets = (
-        (_("Address"), {"fields": ("company", "source", "country_code", "address", "is_headquarters")}),
+        (
+            _("Address"),
+            {"fields": ("company", "source", "country_code", "address", "is_headquarters")},
+        ),
         (_("Metadata"), {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
 

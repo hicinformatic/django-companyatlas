@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from ...managers.virtuals.company import CompanyAtlasVirtualCompanyManager
+
 
 class CompanyAtlasVirtualCompany(models.Model):
     """Virtual company model for companyatlas."""
@@ -13,4 +15,3 @@ class CompanyAtlasVirtualCompany(models.Model):
         verbose_name = _("Virtual Company")
         verbose_name_plural = _("Virtual Companies")
 
-    

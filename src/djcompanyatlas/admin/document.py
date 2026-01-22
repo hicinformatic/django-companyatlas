@@ -26,8 +26,24 @@ class CompanyDocumentAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
 
     fieldsets = (
-        (_("Document"), {"fields": ("company", "source", "country_code", "document_type", "title", "date", "url")}),
+        (
+            _("Document"),
+            {
+                "fields": (
+                    "company",
+                    "source",
+                    "country_code",
+                    "document_type",
+                    "title",
+                    "date",
+                    "url",
+                )
+            },
+        ),
         (_("Content"), {"fields": ("content",)}),
-        (_("Metadata"), {"fields": ("metadata", "created_at", "updated_at"), "classes": ("collapse",)}),
+        (
+            _("Metadata"),
+            {"fields": ("metadata", "created_at", "updated_at"), "classes": ("collapse",)},
+        ),
     )
 

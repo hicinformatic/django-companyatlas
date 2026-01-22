@@ -26,8 +26,14 @@ class CompanyEventAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
 
     fieldsets = (
-        (_("Event"), {"fields": ("company", "source", "country_code", "event_type", "title", "date")}),
+        (
+            _("Event"),
+            {"fields": ("company", "source", "country_code", "event_type", "title", "date")},
+        ),
         (_("Description"), {"fields": ("description",)}),
-        (_("Metadata"), {"fields": ("metadata", "created_at", "updated_at"), "classes": ("collapse",)}),
+        (
+            _("Metadata"),
+            {"fields": ("metadata", "created_at", "updated_at"), "classes": ("collapse",)},
+        ),
     )
 

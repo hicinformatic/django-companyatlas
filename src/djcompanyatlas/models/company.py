@@ -2,7 +2,9 @@
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from .source import CompanyAtlasSourceBase
+
 
 class Company(CompanyAtlasSourceBase):
     """Company model - parent model for company data, documents, and events."""
