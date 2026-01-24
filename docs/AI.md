@@ -1,4 +1,4 @@
-# AI Assistant Contract — Geoaddress
+# AI Assistant Contract — CompanyAtlas
 
 **This document is the single source of truth for all AI-generated work in this repository.**  
 All instructions in this file **override default AI behavior**.
@@ -65,55 +65,50 @@ These rules must always be followed.
 
 ## Project Overview (INFORMATIONAL)
 
-**Geoaddress** is a Python library for address geocoding and reverse geocoding. It provides a unified interface to multiple geocoding providers (Nominatim, Google Maps, Mapbox, etc.) using ProviderKit for provider management.
+**django-companyatlas** is a Django library that provides integration for CompanyAtlas. It offers Django integration for company information lookup and enrichment in Django applications.
 
 ### Core Functionality
 
-1. **Search addresses** with multiple geocoding providers:
-   - Address geocoding (address → coordinates)
-   - Reverse geocoding (coordinates → address)
-   - Address validation and normalization
-   - Get address by reference ID
-   - Get address by OpenStreetMap ID
+1. **Manage company data in Django**:
+   - Display company information in Django admin interface
+   - View company metadata and details
+   - Manage company data through Django models
+   - Integrate company lookup in Django applications
 
-2. **Manage multiple providers** through ProviderKit:
-   - Provider discovery and enumeration
-   - Provider selection and fallback mechanisms
-   - Configuration management per provider
-   - Dependency validation (API keys, packages)
+2. **Integrate CompanyAtlas with Django**:
+   - Use CompanyAtlas providers in Django applications
+   - Access company information through Django models
+   - Leverage CompanyAtlas's provider discovery and management
+   - Use CompanyAtlas's configuration and validation features
 
-3. **Standardized address format**:
-   - Consistent address field structure across all providers
-   - Field descriptions for address components
-   - Support for international addresses
-
-### Supported Providers
-
-**Free providers**: Nominatim, Photon  
-**Paid/API key providers**: Google Maps, Mapbox, LocationIQ, OpenCage, Geocode Earth, Geoapify, Maps.co, HERE
+3. **Django models for companies**:
+   - Django models representing company data
+   - Django admin integration for company management
+   - Integration with CompanyAtlas providers
 
 ---
 
 ## Architecture (REQUIRED)
 
-- Provider-based architecture built on ProviderKit
-- Each geocoding service is implemented as a provider inheriting from `GeoaddressProvider`
-- `GeoaddressProvider` extends `ProviderBase` from ProviderKit
-- Providers are organized in the `providers/` directory
-- Common functionality is shared through the base `GeoaddressProvider` class
-- Provider discovery and management is handled by ProviderKit
+- Django integration for CompanyAtlas
+- Provides Django models for company data
+- Django admin integration for company management
+- Uses CompanyAtlas providers for data lookup and enrichment
+- Integrates with Django's ORM and admin interface
 
 ---
 
 ## Project Structure (INFORMATIONAL)
 
 ```
-python-geoaddress/
-├── src/geoaddress/          # Main package
-│   ├── providers/           # Address provider implementations
-│   ├── commands/            # Command infrastructure
-│   ├── helpers.py           # Helper functions
-│   └── cli.py               # CLI interface
+django-companyatlas/
+├── src/djcompanyatlas/      # Main package
+│   ├── models/              # Django model definitions
+│   ├── admin/               # Django admin configuration
+│   ├── managers/            # Custom managers
+│   ├── views.py             # Django views
+│   ├── urls.py              # URL configuration
+│   └── templates/           # Django templates
 ├── tests/                   # Test suite
 ├── docs/                    # Documentation
 ├── service.py               # Main service entry point
@@ -122,8 +117,8 @@ python-geoaddress/
 
 ### Key Directories
 
-- `src/geoaddress/providers/`: Address provider implementations
-- `src/geoaddress/commands/`: Command infrastructure for CLI system
+- `src/djcompanyatlas/models/`: Django model definitions
+- `src/djcompanyatlas/admin/`: Django admin configuration
 - `tests/`: All tests using pytest
 
 ---
@@ -209,42 +204,29 @@ python-geoaddress/
 
 ---
 
-## Provider Development (REQUIRED)
+## Django Integration (REQUIRED)
 
-### Creating Providers
+### Django Models
 
-Providers must inherit from `GeoaddressProvider`:
+django-companyatlas provides Django models for company data:
+- `Company`: Main company model
+- `CompanyData`: Company data model
+- `CompanyDocument`: Company document model
+- `CompanyEvent`: Company event model
 
-```python
-from geoaddress.providers import GeoaddressProvider
+### Django Admin
 
-class MyProvider(GeoaddressProvider):
-    name = "my_provider"
-    display_name = "My Provider"
-    description = "Description of my provider"
-    required_packages = ["requests"]
-    config_keys = ["MY_PROVIDER_API_KEY"]
-    config_defaults = {"MY_PROVIDER_API_KEY": None}
-    config_required = ["MY_PROVIDER_API_KEY"]
-    config_prefix = "MY_PROVIDER"
-    services = ["search_addresses", "get_address_by_reference", "reverse_geocode", "get_address_by_osm"]
-```
+django-companyatlas provides Django admin integration:
+- Admin interfaces for company models
+- Virtual queryset support for provider-based data
+- Provider management through Django admin
 
-### Required Services
+### CompanyAtlas Integration
 
-All providers must implement:
-- `search_addresses(query: str, **kwargs)`: Search for addresses by query string
-- `get_address_by_reference(reference: str, **kwargs)`: Get address by provider-specific reference ID
-- `reverse_geocode(latitude: float, longitude: float, **kwargs)`: Convert coordinates to address
-- `get_address_by_osm(osm_id: str, osm_type: str, **kwargs)`: Get address by OpenStreetMap ID (if supported)
-
-### Address Format Standardization
-
-- All providers must return addresses in the standardized format defined by `GEOADDRESS_FIELDS_DESCRIPTIONS`
-- Map provider's native response format to standard geoaddress format
-- Use `None` or empty strings for missing optional fields
-- Never omit required fields
-- Store coordinates as floats with appropriate precision
+django-companyatlas integrates with CompanyAtlas:
+- Uses CompanyAtlas providers for data lookup
+- Provides Django models and admin interface
+- Integrates company lookup and enrichment in Django applications
 
 ---
 
@@ -256,7 +238,7 @@ All providers must implement:
 - `ENSURE_VIRTUALENV`
   - Set to `1` to automatically activate `.venv` if it exists
 - Provider-specific variables:
-  - Use provider-specific prefixes (e.g., `NOMINATIM_`, `GOOGLE_MAPS_`, `MAPBOX_`, etc.)
+  - Use provider-specific prefixes (e.g., `INSEE_`, `INPI_`, `ENTDATAGOUV_`, etc.)
   - Never hardcode API keys in code
 
 ---
@@ -294,12 +276,13 @@ All providers must implement:
 
 ---
 
-## CLI System (INFORMATIONAL)
+## Django Integration (INFORMATIONAL)
 
-Geoaddress discovers commands from:
+django-companyatlas integrates CompanyAtlas with Django:
 
-1. `commands/` directory
-2. `.commands.json` configuration file
+1. Django models for company data
+2. Django admin interface for company management
+3. Integration with CompanyAtlas providers
 
 ### Command Creation Rules (REQUIRED)
 
@@ -339,9 +322,9 @@ Before producing output, ensure:
 - [ ] Code is well-factorized when it improves clarity (without adding complexity)
 - [ ] Imports follow ProviderKit and Qualitybase rules
 - [ ] Public APIs are typed and documented
-- [ ] Providers inherit from GeoaddressProvider correctly
-- [ ] Providers implement all required services
-- [ ] Address format follows standardization (GEOADDRESS_FIELDS_DESCRIPTIONS)
+- [ ] Django models are properly defined
+- [ ] Django admin integration is complete
+- [ ] CompanyAtlas integration is properly implemented
 - [ ] No API keys or secrets are hardcoded
 - [ ] Tests are included when required
 - [ ] Error handling is graceful with fallback support

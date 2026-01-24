@@ -38,20 +38,20 @@
 - **Standard library imports**: Use `importlib.import_module()` from the standard library if needed for dynamic imports
 - **Works everywhere**: Since providerkit is installed in the virtual environment, imports work consistently across all projects
 
-### Provider Development
+### Django Integration
 
-- **Provider inheritance**: All providers must inherit from `GeoaddressProvider` (which extends `ProviderBase` from ProviderKit)
-- **Required attributes**: Providers must define `name`, `display_name`, and optionally `description`
-- **Service implementation**: Providers must implement the required services: `search_addresses`, `get_address_by_reference`, `reverse_geocode`, `get_address_by_osm`
-- **Configuration**: Use `config_keys`, `config_defaults`, and `config_required` for provider configuration
-- **API keys**: Never hardcode API keys, use environment variables with the provider's `config_prefix`
+- **Django models**: Define Django models for company data (Company, CompanyData, CompanyDocument, CompanyEvent)
+- **Django admin**: Provide Django admin interfaces for company models
+- **CompanyAtlas integration**: Use CompanyAtlas providers for data lookup and enrichment
+- **Virtual querysets**: Use virtual querysets for provider-based data access
+- **Configuration**: Use environment variables for provider configuration
 
-### Address Format Standardization
+### Company Format Standardization
 
-- **Consistent fields**: All providers must return addresses in the standardized format defined by `GEOADDRESS_FIELDS_DESCRIPTIONS`
-- **Field mapping**: Each provider should map its native response format to the standard geoaddress format
+- **Consistent fields**: All providers must return companies in the standardized format defined by `COMPANYATLAS_SEARCH_COMPANY_FIELDS`
+- **Field mapping**: Each provider should map its native response format to the standard company format
 - **Missing fields**: Use `None` or empty strings for missing optional fields, never omit required fields
-- **Coordinate precision**: Store coordinates as floats with appropriate precision
+- **Data types**: Store company data with appropriate types and precision
 
 ### Error Handling
 
@@ -67,7 +67,7 @@
 - Never hardcode API keys, credentials, or sensitive information
 - Use environment variables or configuration files for settings
 - Provide clear documentation on required configuration
-- Use provider-specific configuration prefixes (e.g., `NOMINATIM_`, `GOOGLE_MAPS_`, etc.)
+- Use provider-specific configuration prefixes (e.g., `INSEE_`, `INPI_`, `ENTDATAGOUV_`, etc.)
 
 ### Versioning
 
