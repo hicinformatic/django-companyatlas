@@ -5,61 +5,72 @@ from virtualqueryset.managers import VirtualManager
 
 
 class CompanyAtlasVirtualDocumentManager(VirtualManager):
-    backend: str | None = None
-    first: bool = False
+    """Manager for company documents from companyatlas."""
+
+    _commands = {
+        'get_company_documents': get_company_documents,
+    }
 
     def __init__(self, code: str | None = None, **kwargs: Any):
         super().__init__()
         self.code = code
-        self.search_kwargs = kwargs
         self.first = kwargs.get("first", False)
         self.backend = kwargs.get("backend", None)
         self.attribute_search = kwargs.get("attribute_search", None)
-        self._cached_data = None
+        self._command = "get_company_documents"
+        self._cached_providers = {}
+        self._cached_data_get_company_documents = {}
 
-    def get_data(self) -> list[Any]:
-        if self._cached_data is not None:
-            return self._cached_data
+    def _clear_cached_command(self, command: str) -> None:
+        setattr(self, f"_cached_data_{command}", {})
 
-        if not self.code or not self.model:
-            self._cached_data = []
-            return self._cached_data
+    def set_cached_command(self, command: str, cache: Any, **kwargs: Any) -> Any:
+        cache = self.queryset_class(model=self.model, data=cache)
+        setattr(self, f"_cached_data_{command}", {"kwargs": kwargs, "data": cache})
+        return self.get_cached_command(command, **kwargs)
 
-        try:
-            if self.backend:
-                self.attribute_search = {"name": self.backend}
-            result = get_company_documents(
-                self.code, first=self.first, attribute_search=self.attribute_search
-            )
+    def get_cached_command(self, command: str, **kwargs: Any) -> Any:
+        cache = getattr(self, f"_cached_data_{command}", {})
+        if kwargs == cache.get("kwargs", {}) and cache.get("data") is not None:
+            return cache.get("data")
+        return None
 
-            if isinstance(result, dict):
-                results_list = []
-                for provider_result in result.values():
-                    if "result" in provider_result:
-                        if isinstance(provider_result["result"], list):
-                            results_list.extend(provider_result["result"])
-                        else:
-                            results_list.append(provider_result["result"])
-                result = results_list
+    def get_command_data_list(self, results: Any, command: str) -> list[Any]:
+        data_list = []
+        for result in results:
+            if isinstance(result, dict) and 'provider' in result:
+                if "error" in result:
+                    continue
+                provider_obj = result['provider']
+                normalize_data = provider_obj.get_service_normalize(command)  # type: ignore[attr-defined]
+                if isinstance(normalize_data, list):
+                    data_list.extend(normalize_data)
+                else:
+                    data_list.append(normalize_data)
+        return data_list
 
-            if not isinstance(result, list):
-                self._cached_data = []
-                return self._cached_data
+    def get_queryset_command(self, command: str, **kwargs: Any) -> Any:
+        cached = self.get_cached_command(command)
+        if not cached or kwargs.get("ignore_cache", False):
+            self._clear_cached_command(command)
+            command_func = self._commands[command]
+            results = command_func(**kwargs)
+            self._cached_providers[command] = results
+            data_list = self.get_command_data_list(results, command)
+            cached = self.set_cached_command(command, data_list, **kwargs)
+        return cached
 
-            objects = []
-            for item in result:
-                if isinstance(item, dict):
-                    obj = self.model(**item)
-                    objects.append(obj)
-                elif isinstance(item, self.model):
-                    objects.append(item)
-            self._cached_data = objects
-            return self._cached_data
-        except Exception:
-            self._cached_data = []
-            return self._cached_data
+    def get_company_documents(self, code: str, first: bool = False, **kwargs: Any) -> Any:
+        return self.get_queryset_command('get_company_documents', code=code, first=first, **kwargs)
 
-    def search(self, code: str, first: bool = False, **kwargs: Any) -> Any:
-        manager = CompanyAtlasVirtualDocumentManager(code=code, first=first, **kwargs)
-        manager.model = self.model
-        return manager.get_queryset()
+    def get_data(self) -> Any:
+        if not self.code:
+            return self.queryset_class(model=self.model, data=[])
+        kwargs = {
+            "code": self.code,
+            "first": self.first,
+            "attribute_search": self.attribute_search,
+        }
+        if self.backend:
+            kwargs["attribute_search"] = {"name": self.backend}
+        return self.get_queryset_command(self._command, **kwargs)

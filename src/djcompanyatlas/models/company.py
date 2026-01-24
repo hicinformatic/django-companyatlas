@@ -9,16 +9,12 @@ from .source import CompanyAtlasSourceBase
 class Company(CompanyAtlasSourceBase):
     """Company model - parent model for company data, documents, and events."""
 
-    name = models.CharField(
+    denomination = models.CharField(
         max_length=255,
         verbose_name=_("Name"),
         help_text=_("Company name"),
     )
-    description = models.TextField(
-        blank=True,
-        verbose_name=_("Description"),
-        help_text=_("Company description"),
-    )
+
 
     class Meta:
         verbose_name = _("Company")
