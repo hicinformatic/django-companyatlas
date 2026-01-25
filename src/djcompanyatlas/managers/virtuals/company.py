@@ -19,7 +19,6 @@ class CompanyAtlasVirtualCompanyManager(BaseServiceProviderManager):
 
     def search_company_by_reference(self, code: str, **kwargs: Any) -> Any:
         code = code.split("_")
-        print(code)
         reference = code[-1]
         backend = "_".join(code[:-1])
         return self.get_queryset_command(
