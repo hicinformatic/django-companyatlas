@@ -16,7 +16,7 @@ companyatlas_id_config: dict[str, Any] = FIELDS_COMPANYATLAS['companyatlas_id']
 
 
 @define_fields_from_config(FIELDS_COMPANYATLAS, primary_key='companyatlas_id')
-class BaseCompanyAtlasVirtualCompany(VirtualModel):
+class CompanyAtlasVirtualCompany(VirtualModel):
     """Virtual model for company suggestions from companyatlas."""
 
     companyatlas_id: models.CharField = models.CharField(
@@ -30,9 +30,8 @@ class BaseCompanyAtlasVirtualCompany(VirtualModel):
 
     class Meta:
         managed = False
-        abstract = True
-        verbose_name = _('Company Suggestion')
-        verbose_name_plural = _('Company Suggestions')
+        verbose_name = _('Virtual Company')
+        verbose_name_plural = _('Virtual Companies')
 
     def __str__(self) -> str:
         denomination = getattr(self, 'denomination', None)
@@ -41,12 +40,4 @@ class BaseCompanyAtlasVirtualCompany(VirtualModel):
             return str(denomination)
         return f"Company {companyatlas_id or 'unknown'}"
 
-
-class CompanyAtlasVirtualCompany(BaseCompanyAtlasVirtualCompany):
-    """Model for companyatlas companies."""
-
-    class Meta:
-        managed = False
-        verbose_name = _('CompanyAtlas Company')
-        verbose_name_plural = _('CompanyAtlas Companies')
 

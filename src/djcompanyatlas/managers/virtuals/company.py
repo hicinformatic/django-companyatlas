@@ -1,10 +1,10 @@
 from typing import Any
 
 from companyatlas.helpers import search_company, search_company_by_reference
-from virtualqueryset.managers import VirtualManager
+from djproviderkit.managers import BaseServiceProviderManager
 
 
-class CompanyAtlasVirtualCompanyManager(VirtualManager):
+class CompanyAtlasVirtualCompanyManager(BaseServiceProviderManager):
     """Manager for company search from companyatlas."""
 
     _commands = {
@@ -12,66 +12,25 @@ class CompanyAtlasVirtualCompanyManager(VirtualManager):
         'search_company_by_reference': search_company_by_reference,
     }
 
-    def __init__(self, query: str | None = None, code: str | None = None, **kwargs: Any):
-        super().__init__()
-        self.query = query
-        self.code = code
-        self.first = kwargs.get("first", False)
-        self.backend = kwargs.get("backend", None)
-        self.attribute_search = kwargs.get("attribute_search", None)
-        self._command = kwargs.get("command", "search_company" if query else "search_company_by_reference")
-        self._cached_providers = {}
-        self._cached_data_search_company = {}
-        self._cached_data_search_company_by_reference = {}
-
-    def _clear_cached_command(self, command: str) -> None:
-        setattr(self, f"_cached_data_{command}", {})
-
-    def set_cached_command(self, command: str, cache: Any, **kwargs: Any) -> Any:
-        cache = self.queryset_class(model=self.model, data=cache)
-        setattr(self, f"_cached_data_{command}", {"kwargs": kwargs, "data": cache})
-        return self.get_cached_command(command, **kwargs)
-
-    def get_cached_command(self, command: str, **kwargs: Any) -> Any:
-        cache = getattr(self, f"_cached_data_{command}", {})
-        if kwargs == cache.get("kwargs", {}) and cache.get("data") is not None:
-            return cache.get("data")
-        return None
-
-    def get_command_data_list(self, results: Any, command: str) -> list[Any]:
-        data_list = []
-        for result in results:
-            if isinstance(result, dict) and 'provider' in result:
-                if "error" in result:
-                    continue
-                provider_obj = result['provider']
-                normalize_data = provider_obj.get_service_normalize(command)  # type: ignore[attr-defined]
-                if isinstance(normalize_data, list):
-                    data_list.extend(normalize_data)
-                else:
-                    data_list.append(normalize_data)
-        return data_list
-
-    def get_queryset_command(self, command: str, **kwargs: Any) -> Any:
-        cached = self.get_cached_command(command)
-        if not cached or kwargs.get("ignore_cache", False):
-            self._clear_cached_command(command)
-            command_func = self._commands[command]
-            results = command_func(**kwargs)
-            self._cached_providers[command] = results
-            data_list = self.get_command_data_list(results, command)
-            cached = self.set_cached_command(command, data_list, **kwargs)
-        return cached
+    _args_available = ['query', 'code', 'first', 'backend']
 
     def search_company(self, query: str, first: bool = False, **kwargs: Any) -> Any:
         return self.get_queryset_command('search_company', query=query, first=first, **kwargs)
 
-    def search_company_by_reference(self, code: str, first: bool = False, **kwargs: Any) -> Any:
-        return self.get_queryset_command('search_company_by_reference', code=code, first=first, **kwargs)
+    def search_company_by_reference(self, code: str, **kwargs: Any) -> Any:
+        code = code.split("_")
+        print(code)
+        reference = code[-1]
+        backend = "_".join(code[:-1])
+        return self.get_queryset_command(
+            'search_company_by_reference',
+            code=reference,
+            attribute_search={"name": backend}, 
+            **kwargs)
 
     def get_data(self) -> Any:
         if not self.query and not self.code:
-            return self.queryset_class(model=self.model, data=[])
+            return []
         command = self._command
         kwargs = {
             "first": self.first,
