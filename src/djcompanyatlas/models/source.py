@@ -2,20 +2,36 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+COMPANYATLAS_FIELDS_SOURCE = [
+    "source",
+    "country_code",
+    "metadata",
+    "created_at",
+    "updated_at",
+]
+
 class CompanyAtlasSourceBase(models.Model):
     """Abstract base class for company-related models with source and country."""
 
     source = models.CharField(
         max_length=100,
         verbose_name=_("Source"),
-        help_text=_("Backend source (e.g., 'insee', 'pappers', 'infogreffe')"),
-        default="N/A",
+        help_text=_("Backend source (e.g., 'insee', 'bodacc', 'inpi')"),
+        blank=True,
+        null=True,
     )
     country_code = models.CharField(
         max_length=2,
         verbose_name=_("Country Code"),
         help_text=_("ISO country code (e.g., FR, US, GB)"),
-        default="NA",
+        blank=True,
+        null=True,
+    )
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Metadata"),
+        help_text=_("Additional metadata"),
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -32,3 +48,14 @@ class CompanyAtlasSourceBase(models.Model):
             models.Index(fields=["source", "country_code"]),
             models.Index(fields=["country_code"]),
         ]
+
+    def set_country_code(self, country_code: str):
+        """Set the country code."""
+        if self.source:
+            provider = CompanyAtlasProviderModel.objects.get(name=self.source)
+            self.country_code = provider.geo_code
+
+    def save(self, *args, **kwargs):
+        """Save the model."""
+        self.set_country_code()
+        super().save(*args, **kwargs)

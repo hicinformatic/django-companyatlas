@@ -1,8 +1,14 @@
 """Company models."""
 
-from .company import Company, CompanyData
-from .document import CompanyDocument
-from .event import CompanyEvent
+from .company import CompanyAtlasCompany, CompanyAtlasData
+from .document import CompanyAtlasDocument
+from .event import CompanyAtlasEvent
 from .virtuals.provider import CompanyAtlasProviderModel
 
-__all__ = ["Company", "CompanyData", "CompanyDocument", "CompanyEvent", "CompanyAtlasProviderModel"]
+__all__ = [
+    "CompanyAtlasCompany",
+    "CompanyAtlasData",
+    "CompanyAtlasDocument",
+    "CompanyAtlasEvent",
+    "CompanyAtlasProviderModel",
+]

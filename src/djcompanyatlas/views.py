@@ -3,12 +3,12 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Company
+from .models import CompanyAtlasCompany
 
 
 def company_list(request):
     """List all companies."""
-    companies = Company.objects.all()
+    companies = CompanyAtlasCompany.objects.all()
     context = {
         "companies": companies,
     }
@@ -17,7 +17,7 @@ def company_list(request):
 
 def company_detail(request, pk):
     """Show company details."""
-    company = get_object_or_404(Company, pk=pk)
+    company = get_object_or_404(CompanyAtlasCompany, pk=pk)
     context = {
         "company": company,
     }
@@ -26,7 +26,7 @@ def company_detail(request, pk):
 
 def company_enrich(request, pk):
     """Trigger company enrichment."""
-    company = get_object_or_404(Company, pk=pk)
+    company = get_object_or_404(CompanyAtlasCompany, pk=pk)
 
     if request.method == "POST":
         if company.enrich(force=True):

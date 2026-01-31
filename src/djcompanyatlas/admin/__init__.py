@@ -1,21 +1,21 @@
-#from .address import CompanyAtlasAddressAdmin
-#from .company import CompanyAdmin, CompanyDataAdmin
-#from .document import CompanyDocumentAdmin
-#from .event import CompanyEventAdmin
+from .company import CompanyAtlasCompanyAdmin, CompanyAtlasDataAdmin
+from .address import CompanyAtlasAddressAdmin
+from .document import CompanyDocumentAdmin
+from .event import CompanyEventAdmin
+from .virtuals.provider import CompanyAtlasProviderModel
 from .virtuals.company import CompanyAtlasVirtualCompanyAdmin
-#from .virtuals.document import CompanyAtlasVirtualDocumentAdmin
-#from .virtuals.event import CompanyAtlasVirtualEventAdmin
-#from .virtuals.provider import CompanyAtlasProviderModel
+from .virtuals.document import CompanyAtlasVirtualDocumentAdmin
+from .virtuals.event import CompanyAtlasVirtualEventAdmin
 
 __all__ = [
-    #"CompanyAdmin",
-    #"CompanyDataAdmin",
-    #"CompanyDocumentAdmin",
-    #"CompanyEventAdmin",
+    "CompanyAtlasProviderModel",
     "CompanyAtlasVirtualCompanyAdmin",
-    #"CompanyAtlasAddressAdmin",
-    #"CompanyAtlasProviderModel",
-    #"CompanyAtlasVirtualDocumentAdmin",
-    #"CompanyAtlasVirtualEventAdmin",
+    "CompanyAtlasVirtualDocumentAdmin",
+    "CompanyAtlasVirtualEventAdmin",
+    "CompanyAtlasCompanyAdmin",
+    "CompanyAtlasDataAdmin",
+    "CompanyDocumentAdmin",
+    "CompanyEventAdmin",
+    "CompanyAtlasAddressAdmin",
 ]
 

@@ -2,19 +2,32 @@
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from namedid.fields import NamedIDField
 from .source import CompanyAtlasSourceBase
 
+COMPANYATLAS_FIELDS_COMPANY = [
+    "denomination",
+    "code",
+    "named_id",
+]
 
-class Company(CompanyAtlasSourceBase):
+class CompanyAtlasCompany(CompanyAtlasSourceBase):
     """Company model - parent model for company data, documents, and events."""
-
     denomination = models.CharField(
         max_length=255,
-        verbose_name=_("Name"),
-        help_text=_("Company name"),
+        verbose_name=_("Denomination"),
+        help_text=_("Company denomination"),
     )
-
+    code = models.CharField(
+        max_length=255,
+        verbose_name=_("Code"),
+        help_text=_("Company code"),
+    )
+    named_id = NamedIDField(
+        source_fields=["denomination", "code"],
+        verbose_name=_("Named ID"),
+        help_text=_("Named ID"),
+    )
 
     class Meta:
         verbose_name = _("Company")
@@ -25,13 +38,13 @@ class Company(CompanyAtlasSourceBase):
         ]
 
     def __str__(self):
-        return self.name
+        return f"{self.denomination} - {self.code}"
 
-class CompanyData(CompanyAtlasSourceBase):
+class CompanyAtlasData(CompanyAtlasSourceBase):
     """Company data from various backends."""
 
     company = models.ForeignKey(
-        Company,
+        CompanyAtlasCompany,
         on_delete=models.CASCADE,
         related_name="data",
         verbose_name=_("Company"),
@@ -41,10 +54,6 @@ class CompanyData(CompanyAtlasSourceBase):
         max_length=100,
         verbose_name=_("Data Type"),
         help_text=_("Type of data (e.g., denomination, siren, capital, employees)"),
-    )
-    value = models.TextField(
-        verbose_name=_("Value"),
-        help_text=_("Data value"),
     )
     value_type = models.CharField(
         max_length=10,
@@ -58,6 +67,11 @@ class CompanyData(CompanyAtlasSourceBase):
         default="str",
         help_text=_("Type of the value (str, int, float, json)"),
     )
+    value = models.TextField(
+        verbose_name=_("Value"),
+        help_text=_("Data value"),
+    )
+
 
     class Meta:
         verbose_name = _("Company Data")

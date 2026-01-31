@@ -1,16 +1,16 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from ..models.event import CompanyEvent
+from ..models.event import CompanyAtlasEvent
 
 
 class CompanyEventInline(admin.TabularInline):
-    model = CompanyEvent
+    model = CompanyAtlasEvent
     extra = 1
     fields = ["source", "country_code", "event_type", "title", "date"]
 
 
-@admin.register(CompanyEvent)
+@admin.register(CompanyAtlasEvent)
 class CompanyEventAdmin(admin.ModelAdmin):
     list_display = [
         "company",

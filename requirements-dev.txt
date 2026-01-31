@@ -9,6 +9,7 @@
 -e ../django-boosted
 -e ../django-providerkit
 -e ../django-geoaddress
+-e ../django-namedid
 -e .
 
 # Core

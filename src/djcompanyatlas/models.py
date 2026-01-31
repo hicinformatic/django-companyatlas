@@ -208,7 +208,7 @@ class CompanyData(models.Model):
     ]
 
     company = models.ForeignKey(
-        Company,
+        CompanyAtlasCompany,
         on_delete=models.CASCADE,
         related_name="data",
         help_text="Company this data belongs to",
@@ -301,7 +301,7 @@ class CompanyCountryData(models.Model):
     """
 
     company = models.ForeignKey(
-        Company,
+        CompanyAtlasCompany,
         on_delete=models.CASCADE,
         related_name="country_data",
         help_text="Company this data belongs to",

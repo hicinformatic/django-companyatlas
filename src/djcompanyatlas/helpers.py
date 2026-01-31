@@ -2,7 +2,7 @@
 
 from django.db import transaction
 
-from .models import Company, CompanyData
+from .models import CompanyAtlasCompany, CompanyAtlasData
 
 
 def create_or_update_company_data(
@@ -38,11 +38,11 @@ def create_or_update_company_data(
         if not company_name:
             company_name = value if data_type == "denomination" else "Unknown Company"
 
-        company, _ = Company.objects.get_or_create(
+        company, _ = CompanyAtlasCompany.objects.get_or_create(
             name=company_name, defaults=company_kwargs
         )
 
-    data, created = CompanyData.objects.get_or_create(
+    data, created = CompanyAtlasData.objects.get_or_create(
         company=company,
         source=source,
         country_code=country,

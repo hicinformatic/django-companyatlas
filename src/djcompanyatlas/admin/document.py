@@ -1,16 +1,16 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from ..models.document import CompanyDocument
+from ..models.document import CompanyAtlasDocument
 
 
 class CompanyDocumentInline(admin.TabularInline):
-    model = CompanyDocument
+    model = CompanyAtlasDocument
     extra = 1
     fields = ["source", "country_code", "document_type", "title", "date", "url"]
 
 
-@admin.register(CompanyDocument)
+@admin.register(CompanyAtlasDocument)
 class CompanyDocumentAdmin(admin.ModelAdmin):
     list_display = [
         "company",

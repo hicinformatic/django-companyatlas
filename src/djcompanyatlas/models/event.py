@@ -1,15 +1,15 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .company import Company
+from .company import CompanyAtlasCompany
 from .source import CompanyAtlasSourceBase
 
 
-class CompanyEvent(CompanyAtlasSourceBase):
+class CompanyAtlasEvent(CompanyAtlasSourceBase):
     """Company events from various backends."""
 
     company = models.ForeignKey(
-        Company,
+        CompanyAtlasCompany,
         on_delete=models.CASCADE,
         related_name="events",
         verbose_name=_("Company"),
@@ -36,12 +36,7 @@ class CompanyEvent(CompanyAtlasSourceBase):
         verbose_name=_("Description"),
         help_text=_("Event description"),
     )
-    metadata = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name=_("Metadata"),
-        help_text=_("Additional event metadata"),
-    )
+
 
     class Meta:
         verbose_name = _("Company Event")

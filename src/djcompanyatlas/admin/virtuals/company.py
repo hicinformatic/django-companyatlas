@@ -2,10 +2,10 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django_boosted import AdminBoostModel
+from django_boosted import AdminBoostModel, admin_boost_view
 from ...models.virtuals.company import CompanyAtlasVirtualCompany
 from ...models.virtuals.provider import CompanyAtlasProviderModel
-
+from ...forms.virtuals.company import CompanyAtlasVirtualCompanyCreateForm
 from djproviderkit.admin.service import FirstServiceAdminFilter, BackendServiceAdminFilter
 BackendServiceAdminFilter.provider_model = CompanyAtlasProviderModel
 
@@ -49,3 +49,14 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
         url = reverse("admin:djcompanyatlas_companyatlasprovidermodel_change", args=[obj.backend])
         return format_html('<a href="{}">{}</a>', url, obj.backend_name)
     backend_name_display.short_description = _("Backend name")
+
+    @admin_boost_view("adminform", "Create Company")
+    def create_company_view(self, request, obj):
+        if request.method == "POST":
+            form = CompanyAtlasVirtualCompanyCreateForm(request.POST, instance=obj)
+            if form.is_valid():
+                company = form.save()
+        else:
+            form = CompanyAtlasVirtualCompanyCreateForm(instance=obj)
+        
+        return { "form": form, "buttons": {"_create": _("Create")} }
