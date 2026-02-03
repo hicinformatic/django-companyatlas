@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.utils import unquote
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
@@ -15,12 +16,15 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
     search_fields = ["denomination",]
     list_filter = [FirstServiceAdminFilter, BackendServiceAdminFilter]
     fieldsets = [
-        (None, {'fields': ("denomination", "reference", "address")}),
+        (None, {'fields': ("denomination", "reference", "source_field", "address")}),
     ]
+    changeform_actions = {
+        "create_company": _("Create Company"),
+    }
 
     def change_fieldsets(self):
         self.add_to_fieldset(_('Backend'), ('backend',  'backend_name_display', 'companyatlas_id'))
-        self.add_to_fieldset('data', ('data_source',))
+        self.add_to_fieldset('data', ('country', 'data_source',))
 
     def has_add_permission(self, request):
         return False
@@ -41,6 +45,7 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
         return self.model.objects.none()
 
     def get_object(self, request, object_id, from_field=None):
+        object_id = unquote(object_id)
         return self.model.objects.search_company_by_reference(code=object_id).first()
 
     def backend_name_display(self, obj: CompanyAtlasVirtualCompany | None) -> str:
@@ -50,6 +55,14 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
         return format_html('<a href="{}">{}</a>', url, obj.backend_name)
     backend_name_display.short_description = _("Backend name")
 
+    def company_model_exist(self, obj: CompanyAtlasVirtualCompany | None) -> bool:
+        from djcompanyatlas.models.company import CompanyAtlasCompany
+        return CompanyAtlasCompany.objects.filter(denomination=obj.denomination).exists()
+
+    def handle_create_company(self, request, object_id):
+        object_id = unquote(object_id)
+        obj = self.get_object(request, object_id)
+
     @admin_boost_view("adminform", "Create Company")
     def create_company_view(self, request, obj):
         if request.method == "POST":
@@ -58,5 +71,4 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
                 company = form.save()
         else:
             form = CompanyAtlasVirtualCompanyCreateForm(instance=obj)
-        
-        return { "form": form, "buttons": {"_create": _("Create")} }
+        return { "form": form, "has_change_permission": True }
