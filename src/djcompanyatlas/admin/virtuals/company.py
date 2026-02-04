@@ -3,10 +3,13 @@ from django.contrib.admin.utils import unquote
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+from django.shortcuts import redirect
+from django.utils.http import urlencode
+
+
 from django_boosted import AdminBoostModel, admin_boost_view
 from ...models.virtuals.company import CompanyAtlasVirtualCompany
 from ...models.virtuals.provider import CompanyAtlasProviderModel
-from ...forms.virtuals.company import CompanyAtlasVirtualCompanyCreateForm
 from djproviderkit.admin.service import FirstServiceAdminFilter, BackendServiceAdminFilter
 BackendServiceAdminFilter.provider_model = CompanyAtlasProviderModel
 
@@ -20,11 +23,14 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
     ]
     changeform_actions = {
         "create_company": _("Create Company"),
+        "show_company": _("Show Company"),
+        "show_companies": _("Show Companies"),
     }
 
     def change_fieldsets(self):
         self.add_to_fieldset(_('Backend'), ('backend',  'backend_name_display', 'companyatlas_id'))
-        self.add_to_fieldset('data', ('country', 'data_source',))
+        self.add_to_fieldset('data', ('country_code', 'data_source', 'company_count_exists'))
+        self.add_to_fieldset('address', ('address_json',))
 
     def has_add_permission(self, request):
         return False
@@ -35,6 +41,12 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def has_show_company_permission(self, request, obj=None):
+        return self.company_count_exists(obj) == 1 if obj else False
+
+    def has_show_companies_permission(self, request, obj=None):
+        return self.company_count_exists(obj) > 1 if obj else False
+    
     def get_queryset(self, request):
         query = request.GET.get("q")
         if query:
@@ -62,13 +74,24 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
     def handle_create_company(self, request, object_id):
         object_id = unquote(object_id)
         obj = self.get_object(request, object_id)
+        company = obj.create_company()
+        return redirect("admin:djcompanyatlas_companyatlascompany_change", company.id)
 
-    @admin_boost_view("adminform", "Create Company")
-    def create_company_view(self, request, obj):
-        if request.method == "POST":
-            form = CompanyAtlasVirtualCompanyCreateForm(request.POST, instance=obj)
-            if form.is_valid():
-                company = form.save()
-        else:
-            form = CompanyAtlasVirtualCompanyCreateForm(instance=obj)
-        return { "form": form, "has_change_permission": True }
+    def handle_show_companies(self, request, object_id):
+        object_id = unquote(object_id)
+        obj = self.get_object(request, object_id)
+        url = reverse("admin:djcompanyatlas_companyatlascompany_changelist")
+        query = urlencode({"q": obj.reference})
+        return redirect(f"{url}?{query}")
+
+    def handle_show_company(self, request, object_id):
+        object_id = unquote(object_id)
+        obj = self.get_object(request, object_id)
+        return redirect("admin:djcompanyatlas_companyatlascompany_change", obj.id)
+
+    def company_count_exists(self, obj: CompanyAtlasVirtualCompany | None) -> bool:
+        from djcompanyatlas.models.company import CompanyAtlasCompany
+        return CompanyAtlasCompany.objects.filter(
+            to_companyatlasdata__data_type=obj.source_field,
+            to_companyatlasdata__value=obj.reference,
+        ).count()

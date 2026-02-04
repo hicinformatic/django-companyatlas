@@ -14,7 +14,7 @@ class CompanyAtlasAddress(CompanyAtlasSourceBase):
     company = models.ForeignKey(
         CompanyAtlasCompany,
         on_delete=models.CASCADE,
-        related_name="addresses",
+        related_name="to_companyatlasaddress",
         verbose_name=_("Company"),
         help_text=_("Company this address belongs to"),
     )
@@ -35,6 +35,7 @@ class CompanyAtlasAddress(CompanyAtlasSourceBase):
             models.Index(fields=["company", "address"]),
             models.Index(fields=["company", "is_headquarters"]),
         ]
+        ordering = ["-is_headquarters", "-created_at"]
 
     def __str__(self):
-        return f"{self.company.name} - {self.address}"
+        return f"{self.company.denomination} - {self.address}"

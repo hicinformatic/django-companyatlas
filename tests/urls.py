@@ -8,6 +8,7 @@ urlpatterns = [
     path("", RedirectView.as_view(url="/admin/", permanent=False)),
     path("admin/", admin.site.urls),
     path("companies/", include("djcompanyatlas.urls")),
+    path("geoaddress/", include("djgeoaddress.urls")),
 ]
 
 admin.site.site_header = "Django CompanyAtlas - Administration"

@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from companyatlas import COMPANYATLAS_SEARCH_COMPANY_FIELDS
 from djproviderkit.models.service import define_fields_from_config
 from virtualqueryset.models import VirtualModel
+from djcompanyatlas.helpers import create_company
 
 from djcompanyatlas.managers.virtuals.company import CompanyAtlasVirtualCompanyManager
 
@@ -40,4 +41,5 @@ class CompanyAtlasVirtualCompany(VirtualModel):
             return str(denomination)
         return f"Company {companyatlas_id or 'unknown'}"
 
-
+    def create_company(self):
+        return create_company(self)

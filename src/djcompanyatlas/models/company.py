@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from namedid.fields import NamedIDField
 from .source import CompanyAtlasSourceBase
+from ..managers.company import CompanyAtlasCompanyManager
 
 COMPANYATLAS_FIELDS_COMPANY = [
     "denomination",
@@ -29,6 +30,8 @@ class CompanyAtlasCompany(CompanyAtlasSourceBase):
         help_text=_("Named ID"),
     )
 
+    objects = CompanyAtlasCompanyManager()
+
     class Meta:
         verbose_name = _("Company")
         verbose_name_plural = _("Companies")
@@ -40,13 +43,18 @@ class CompanyAtlasCompany(CompanyAtlasSourceBase):
     def __str__(self):
         return f"{self.denomination} - {self.code}"
 
+    @property
+    def headquarters_address(self):
+        return self.to_companyatlasaddress.filter(is_headquarters=True).first()
+   
+
 class CompanyAtlasData(CompanyAtlasSourceBase):
     """Company data from various backends."""
 
     company = models.ForeignKey(
         CompanyAtlasCompany,
         on_delete=models.CASCADE,
-        related_name="data",
+        related_name="to_companyatlasdata",
         verbose_name=_("Company"),
         help_text=_("Company this data belongs to"),
     )
@@ -81,9 +89,10 @@ class CompanyAtlasData(CompanyAtlasSourceBase):
             models.Index(fields=["company", "country_code"]),
             models.Index(fields=["data_type"]),
         ]
+        ordering = ["data_type", "-created_at"]
 
     def __str__(self):
-        return f"{self.company.name} - {self.source} - {self.country_code} - {self.data_type}"
+        return f"{self.company.denomination} - {self.source} - {self.country_code} - {self.data_type}"
 
     def get_value(self):
         """Get the value converted to its proper type."""
@@ -123,4 +132,3 @@ class CompanyAtlasData(CompanyAtlasSourceBase):
         else:
             self.value = str(value)
             self.value_type = "str"
-

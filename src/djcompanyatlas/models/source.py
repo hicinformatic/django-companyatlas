@@ -48,14 +48,3 @@ class CompanyAtlasSourceBase(models.Model):
             models.Index(fields=["source", "country_code"]),
             models.Index(fields=["country_code"]),
         ]
-
-    def set_country_code(self, country_code: str):
-        """Set the country code."""
-        if self.source:
-            provider = CompanyAtlasProviderModel.objects.get(name=self.source)
-            self.country_code = provider.geo_code
-
-    def save(self, *args, **kwargs):
-        """Save the model."""
-        self.set_country_code()
-        super().save(*args, **kwargs)
