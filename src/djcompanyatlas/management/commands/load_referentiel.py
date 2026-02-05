@@ -27,7 +27,7 @@ class Command(BaseCommand):
             help="Usage type for all loaded records (overridden by CSV column if present)",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         # Determine CSV path
         if options["csv"]:
             csv_path = Path(options["csv"])

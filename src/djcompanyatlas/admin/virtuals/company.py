@@ -57,6 +57,7 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
         return self.model.objects.none()
 
     def get_object(self, request, object_id, from_field=None):
+        _ = from_field  # Unused parameter required by Django admin interface
         object_id = unquote(object_id)
         return self.model.objects.search_company_by_reference(code=object_id).first()
 
