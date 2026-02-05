@@ -1,4 +1,5 @@
-from djcompanyatlas.models.company import CompanyAtlasCompany, CompanyAtlasData
+from djcompanyatlas.models.company import CompanyAtlasCompany
+from djcompanyatlas.models.data import CompanyAtlasData
 
 def create_source(
     backend: str,

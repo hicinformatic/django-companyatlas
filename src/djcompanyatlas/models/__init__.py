@@ -1,11 +1,18 @@
 """Company models."""
 
-from .company import CompanyAtlasCompany, CompanyAtlasData
+from .company import CompanyAtlasCompany
+from .data import CompanyAtlasData
 from .document import CompanyAtlasDocument
 from .event import CompanyAtlasEvent
 from .address import CompanyAtlasAddress
 from .person import CompanyAtlasPerson
-from .virtuals.provider import CompanyAtlasProviderModel
+from .referentiel import CompanyAtlasReferentiel
+from .virtuals import (
+    CompanyAtlasProviderModel,
+    CompanyAtlasVirtualCompany,
+    CompanyAtlasVirtualDocument,
+    CompanyAtlasVirtualEvent,
+)
 
 __all__ = [
     "CompanyAtlasCompany",
@@ -14,5 +21,9 @@ __all__ = [
     "CompanyAtlasEvent",
     "CompanyAtlasAddress",
     "CompanyAtlasPerson",
+    "CompanyAtlasReferentiel",
     "CompanyAtlasProviderModel",
+    "CompanyAtlasVirtualCompany",
+    "CompanyAtlasVirtualDocument",
+    "CompanyAtlasVirtualEvent",
 ]

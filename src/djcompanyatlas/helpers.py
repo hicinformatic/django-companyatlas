@@ -2,11 +2,15 @@
 
 from django.db import transaction
 
-from .models import CompanyAtlasCompany, CompanyAtlasData, CompanyAtlasAddress
+from .models import (
+    CompanyAtlasCompany,
+    CompanyAtlasData,
+    CompanyAtlasAddress,
+)
 
 
 @transaction.atomic
-def create_company(obj: CompanyAtlasVirtualCompany):
+def create_company(obj):
     company = CompanyAtlasCompany.objects.create(
         denomination=obj.denomination,
         code=obj.reference,
