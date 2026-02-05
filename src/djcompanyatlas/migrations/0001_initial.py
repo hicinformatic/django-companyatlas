@@ -720,7 +720,9 @@ class Migration(migrations.Migration):
                 (
                     "event_type",
                     models.CharField(
-                        help_text="Type of event (e.g., status_change, modification, capital_change)",
+                        help_text=(
+                            "Type of event (e.g., status_change, modification, capital_change)"
+                        ),
                         max_length=100,
                         verbose_name="Event Type",
                     ),

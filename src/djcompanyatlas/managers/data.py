@@ -1,8 +1,8 @@
 from django.db import models
-from django.db.models import Count
-from django.db.models import Subquery
-from django.db.models import F
+from django.db.models import F, Subquery
+
 from ..models.referentiel import CompanyAtlasReferentiel
+
 
 class CompanyAtlasDataManager(models.Manager):
     def get_queryset(self):

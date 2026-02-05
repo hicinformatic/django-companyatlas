@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from .source import CompanyAtlasSourceBase
+
 from ..managers.referentiel import CompanyAtlasReferentielManager
+from .source import CompanyAtlasSourceBase
+
 
 class CompanyAtlasReferentiel(CompanyAtlasSourceBase):
     """Referentiel model - parent model for referentiel data."""

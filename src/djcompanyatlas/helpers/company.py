@@ -1,5 +1,6 @@
-from djcompanyatlas.models.virtuals.provider import CompanyAtlasProviderModel
 from djcompanyatlas.models.virtuals.company import CompanyAtlasVirtualCompany
+
+
 def create_company(provider: str, reference: str):
     """Create a company from a source."""
     company = CompanyAtlasVirtualCompany.objects.search_company_by_reference(

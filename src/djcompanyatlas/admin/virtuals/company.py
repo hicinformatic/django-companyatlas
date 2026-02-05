@@ -1,16 +1,16 @@
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _
-from django.shortcuts import redirect
 from django.utils.http import urlencode
+from django.utils.translation import gettext_lazy as _
+from django_boosted import AdminBoostModel
+from djproviderkit.admin.service import BackendServiceAdminFilter, FirstServiceAdminFilter
 
-
-from django_boosted import AdminBoostModel, admin_boost_view
 from ...models.virtuals.company import CompanyAtlasVirtualCompany
 from ...models.virtuals.provider import CompanyAtlasProviderModel
-from djproviderkit.admin.service import FirstServiceAdminFilter, BackendServiceAdminFilter
+
 BackendServiceAdminFilter.provider_model = CompanyAtlasProviderModel
 
 @admin.register(CompanyAtlasVirtualCompany)
@@ -46,7 +46,7 @@ class CompanyAtlasVirtualCompanyAdmin(AdminBoostModel):
 
     def has_show_companies_permission(self, request, obj=None):
         return self.company_count_exists(obj) > 1 if obj else False
-    
+
     def get_queryset(self, request):
         query = request.GET.get("q")
         if query:

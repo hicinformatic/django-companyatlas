@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class CompanyAtlasCompanyManager(models.Manager):
     def get_queryset(self):
         qs = super().get_queryset()

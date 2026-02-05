@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from .company import CompanyAtlasCompany
 from .source import CompanyAtlasSourceBase
 
+
 class CompanyAtlasPerson(CompanyAtlasSourceBase):
     """Company officers and owners from various backends."""
     company = models.ForeignKey(
@@ -85,4 +86,3 @@ class CompanyAtlasPerson(CompanyAtlasSourceBase):
 
     def __str__(self):
         return f"{self.company.denomination} - {self.officer_or_owner} - {self.physical_or_moral}"
-        

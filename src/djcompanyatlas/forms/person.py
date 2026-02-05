@@ -1,11 +1,12 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from ..models.person import CompanyAtlasPerson
-from django.utils.translation import gettext_lazy as _
+
 
 class CompanyAtlasPersonForm(forms.ModelForm):
     """Form with radio buttons for choice fields."""
-    
+
     officer_or_owner = forms.ChoiceField(
         choices=CompanyAtlasPerson._meta.get_field('officer_or_owner').choices,
         widget=forms.RadioSelect,
@@ -16,7 +17,7 @@ class CompanyAtlasPersonForm(forms.ModelForm):
         widget=forms.RadioSelect,
         label=_("Physical or Moral"),
     )
-    
+
     class Meta:
         model = CompanyAtlasPerson
         fields = '__all__'

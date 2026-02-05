@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django_boosted import AdminBoostModel
+
+from ..forms.person import CompanyAtlasPersonForm
 from ..models.person import CompanyAtlasPerson
 from ..models.source import COMPANYATLAS_FIELDS_SOURCE
-from ..forms.person import CompanyAtlasPersonForm
 
 
 class CompanyAtlasPersonInline(admin.TabularInline):
@@ -23,7 +24,7 @@ class CompanyAtlasPersonAdmin(AdminBoostModel):
 
     def change_fieldsets(self):
         self.add_to_fieldset(None, [
-            "company", 
+            "company",
             "officer_or_owner",
             "physical_or_moral",
             "is_joint_ownership",

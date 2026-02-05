@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django_boosted import AdminBoostModel
+
 from ..models.referentiel import CompanyAtlasReferentiel
 from ..models.source import COMPANYATLAS_FIELDS_SOURCE
 

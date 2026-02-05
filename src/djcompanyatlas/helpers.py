@@ -3,9 +3,9 @@
 from django.db import transaction
 
 from .models import (
+    CompanyAtlasAddress,
     CompanyAtlasCompany,
     CompanyAtlasData,
-    CompanyAtlasAddress,
 )
 
 

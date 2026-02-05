@@ -1,11 +1,13 @@
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django_boosted import AdminBoostModel, admin_boost_view
-from django.shortcuts import redirect
-from ..models.company import CompanyAtlasCompany, COMPANYATLAS_FIELDS_COMPANY
+
+from ..models.company import COMPANYATLAS_FIELDS_COMPANY, CompanyAtlasCompany
 from ..models.source import COMPANYATLAS_FIELDS_SOURCE
 from .address import CompanyAtlasAddressInline
 from .data import CompanyAtlasDataInline
+
 
 @admin.register(CompanyAtlasCompany)
 class CompanyAtlasCompanyAdmin(AdminBoostModel):

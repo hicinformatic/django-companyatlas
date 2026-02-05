@@ -1,11 +1,13 @@
 """Company data models."""
 
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from .source import CompanyAtlasSourceBase
+
 from .company import CompanyAtlasCompany
 from .referentiel import CompanyAtlasReferentiel
-import json
+from .source import CompanyAtlasSourceBase
+
 
 class CompanyAtlasData(CompanyAtlasSourceBase):
     """Company data from various backends."""
@@ -57,7 +59,10 @@ class CompanyAtlasData(CompanyAtlasSourceBase):
         ordering = ["data_type", "-created_at"]
 
     def __str__(self):
-        return f"{self.company.denomination} - {self.source} - {self.country_code} - {self.data_type}"
+        return (
+            f"{self.company.denomination} - {self.source} - "
+            f"{self.country_code} - {self.data_type}"
+        )
 
     @property
     def referentiel_description(self):

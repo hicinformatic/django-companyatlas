@@ -1,12 +1,12 @@
 """Provider model for companyatlas providers."""
 
+from companyatlas.helpers import ADD_FIELDS
 from companyatlas.providers import CompanyAtlasProvider
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from djproviderkit.models.service import define_provider_fields, define_service_fields
 from virtualqueryset.models import VirtualModel
 
-from companyatlas.helpers import ADD_FIELDS
 from ...managers.virtuals.provider import CompanyAtlasProviderManager
 
 _default_cfg = getattr(CompanyAtlasProvider, '_default_services_cfg', {})

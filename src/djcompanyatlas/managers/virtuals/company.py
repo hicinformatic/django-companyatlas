@@ -24,7 +24,7 @@ class CompanyAtlasVirtualCompanyManager(BaseServiceProviderManager):
         return self.get_queryset_command(
             'search_company_by_reference',
             code=reference,
-            attribute_search={"name": backend}, 
+            attribute_search={"name": backend},
             **kwargs)
 
     def get_data(self) -> Any:
